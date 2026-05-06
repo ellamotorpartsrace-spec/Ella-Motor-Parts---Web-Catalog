@@ -113,8 +113,14 @@ const deleteImagesFromSupabase = async (urls) => {
   }
 };
 
+import { syncWithPOS } from '../utils/posSync.js';
+
 // GET /api/products - List products with filtering, search, and pagination
 router.get('/', async (req, res) => {
+  // Background Sync: Trigger a sync but don't wait for it.
+  // The throttle in posSync.js will ensure this doesn't happen too often.
+  syncWithPOS().catch(err => console.error('Background sync error:', err));
+  
   try {
     const {
       page = 1,
@@ -317,6 +323,9 @@ router.get('/search-suggestions', async (req, res) => {
 
 // GET /api/products/:id - Get single product
 router.get('/:id', async (req, res) => {
+  // Background Sync: Check if inventory needs updating
+  syncWithPOS().catch(err => console.error('Background sync error:', err));
+  
   try {
     const { data: product, error } = await supabase
       .from('products')

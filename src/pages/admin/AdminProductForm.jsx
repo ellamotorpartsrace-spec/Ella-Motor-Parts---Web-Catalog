@@ -262,9 +262,19 @@ export default function AdminProductForm() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-secondary-400 uppercase tracking-widest ml-1">Price (₱)</label>
-                    <input type="number" value={form.price} onChange={e => setForm({...form, price: e.target.value})}
-                      className="w-full px-6 py-4 bg-secondary-50/50 rounded-2xl border border-transparent focus:bg-white focus:border-secondary-900 transition-all font-bold text-sm outline-none font-mono" />
+                    <label className="text-[10px] font-black text-secondary-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                      Price (₱)
+                      {isEdit && <span className="text-[8px] bg-secondary-100 px-1.5 py-0.5 rounded text-secondary-400">Synced</span>}
+                    </label>
+                    <input 
+                      type="number" 
+                      value={form.price} 
+                      onChange={e => setForm({...form, price: e.target.value})}
+                      readOnly={isEdit}
+                      className={`w-full px-6 py-4 rounded-2xl border border-transparent transition-all font-bold text-sm outline-none font-mono ${
+                        isEdit ? 'bg-secondary-100/50 text-secondary-400 cursor-not-allowed' : 'bg-secondary-50/50 focus:bg-white focus:border-secondary-900'
+                      }`} 
+                    />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-secondary-400 uppercase tracking-widest ml-1">Stock</label>
@@ -272,10 +282,20 @@ export default function AdminProductForm() {
                       className="w-full px-6 py-4 bg-secondary-50/50 rounded-2xl border border-transparent focus:bg-white focus:border-secondary-900 transition-all font-bold text-sm outline-none font-mono" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-secondary-400 uppercase tracking-widest ml-1">SKU</label>
-                    <input type="text" value={form.sku} onChange={e => setForm({...form, sku: e.target.value})}
+                    <label className="text-[10px] font-black text-secondary-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                      SKU
+                      {isEdit && <span className="text-[8px] bg-secondary-100 px-1.5 py-0.5 rounded text-secondary-400">Fixed</span>}
+                    </label>
+                    <input 
+                      type="text" 
+                      value={form.sku} 
+                      onChange={e => setForm({...form, sku: e.target.value})}
+                      readOnly={isEdit}
                       placeholder="HUB-XXX"
-                      className="w-full px-6 py-4 bg-secondary-50/50 rounded-2xl border border-transparent focus:bg-white focus:border-secondary-900 transition-all font-bold text-sm outline-none font-mono uppercase" />
+                      className={`w-full px-6 py-4 rounded-2xl border border-transparent transition-all font-bold text-sm outline-none font-mono uppercase ${
+                        isEdit ? 'bg-secondary-100/50 text-secondary-400 cursor-not-allowed' : 'bg-secondary-50/50 focus:bg-white focus:border-secondary-900'
+                      }`} 
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">

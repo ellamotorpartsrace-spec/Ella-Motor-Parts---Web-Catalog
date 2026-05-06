@@ -7,7 +7,10 @@ import {
   Image as ImageIcon,
   ExternalLink,
   Search,
-  Camera
+  Camera,
+  RefreshCw,
+  Clock,
+  Edit
 } from 'lucide-react';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
@@ -21,6 +24,8 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [syncing, setSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState(null);
   const itemsPerPage = 15;
 
   useEffect(() => {
@@ -40,6 +45,29 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchProducts();
+    
+    // Auto-sync check: If no products were updated in the last hour, trigger a background sync
+    const checkAutoSync = async () => {
+      try {
+        const { data } = await api.get('/products?limit=1&sort=updated_at&order=DESC');
+        if (data.products.length > 0) {
+          const lastUpdate = new Date(data.products[0].updated_at);
+          const staleThreshold = new Date(Date.now() - 15 * 60 * 1000); // 15 minutes
+          
+          if (lastUpdate < staleThreshold) {
+            console.log('🔄 Inventory is stale (>15min). Triggering auto-sync...');
+            handleSync();
+          }
+        } else {
+          // If no products at all, sync anyway
+          handleSync();
+        }
+      } catch (err) {
+        console.error('Auto-sync check failed:', err);
+      }
+    };
+    
+    checkAutoSync();
   }, [debouncedSearch, currentPage]);
 
   const fetchStats = async () => {
@@ -72,11 +100,36 @@ export default function AdminDashboard() {
       });
       setProducts(data.products);
       setPagination(data.pagination);
+      
+      // Find the most recent update time
+      if (data.products.length > 0) {
+        const newest = data.products.reduce((acc, p) => 
+          new Date(p.updated_at) > new Date(acc) ? p.updated_at : acc, 
+          data.products[0].updated_at
+        );
+        setLastSync(newest);
+      }
     } catch (error) {
       console.error('Fetch products error:', error);
       toast.error('Failed to load components.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSync = async () => {
+    setSyncing(true);
+    const toastId = toast.loading('Synchronizing with POS inventory...');
+    try {
+      const { data } = await api.post('/sync/pos-now');
+      toast.success(data.message, { id: toastId });
+      fetchProducts();
+      fetchStats();
+    } catch (error) {
+      console.error('Sync error:', error);
+      toast.error('Sync failed. Ensure local POS server is running.', { id: toastId });
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -107,6 +160,29 @@ export default function AdminDashboard() {
                 <span className="text-secondary-950">MOTORPARTS</span>
               </h1>
             </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            {lastSync && (
+              <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-secondary-100 rounded-xl shadow-sm">
+                <Clock size={12} className="text-secondary-400" />
+                <span className="text-[9px] font-black text-secondary-500 uppercase tracking-widest">
+                  Last Sync: {new Date(lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            )}
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className={`flex items-center gap-3 px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg ${
+                syncing 
+                  ? 'bg-secondary-100 text-secondary-400 cursor-wait' 
+                  : 'bg-primary-600 text-white hover:bg-primary-700 shadow-primary-600/20'
+              }`}
+            >
+              <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
+              {syncing ? 'Syncing...' : 'Sync with POS'}
+            </button>
           </div>
         </div>
 
@@ -202,6 +278,9 @@ export default function AdminDashboard() {
                        <Link to={`/admin/products/${product.id}/photos`} className="w-9 h-9 rounded-xl bg-white text-secondary-400 flex items-center justify-center hover:bg-primary-600 hover:text-white border border-secondary-100 transition-all shadow-sm" title="Manage Photos">
                          <Camera size={14} />
                        </Link>
+                       <Link to={`/admin/products/${product.id}`} className="w-9 h-9 rounded-xl bg-white text-secondary-400 flex items-center justify-center hover:bg-secondary-950 hover:text-white border border-secondary-100 transition-all shadow-sm" title="Edit Component">
+                         <Edit size={14} />
+                       </Link>
                     </div>
                   </div>
                 </div>
@@ -278,6 +357,9 @@ export default function AdminDashboard() {
                            </Link>
                            <Link to={`/admin/products/${product.id}/photos`} className="w-10 h-10 rounded-xl bg-white text-secondary-400 flex items-center justify-center hover:bg-primary-600 hover:text-white border border-secondary-100 transition-all shadow-sm" title="Manage Photos">
                              <Camera size={16} />
+                           </Link>
+                           <Link to={`/admin/products/${product.id}`} className="w-10 h-10 rounded-xl bg-white text-secondary-400 flex items-center justify-center hover:bg-secondary-950 hover:text-white border border-secondary-100 transition-all shadow-sm" title="Edit Component">
+                             <Edit size={16} />
                            </Link>
                          </div>
                       </td>

@@ -1,7 +1,25 @@
 import axios from 'axios';
 import { supabase } from '../config/supabase.js';
 
-export const syncWithPOS = async () => {
+let isSyncing = false;
+let lastSyncTime = 0;
+const SYNC_THROTTLE = 5 * 60 * 1000; // 5 minutes
+
+export const syncWithPOS = async (force = false) => {
+  const now = Date.now();
+  
+  if (isSyncing) {
+    console.log('⚠️ Sync already in progress, skipping...');
+    return { success: true, message: 'Sync already in progress' };
+  }
+
+  if (!force && (now - lastSyncTime < SYNC_THROTTLE)) {
+    const remaining = Math.ceil((SYNC_THROTTLE - (now - lastSyncTime)) / 1000);
+    console.log(`⏱️ Sync throttled. Next available in ${remaining}s`);
+    return { success: true, message: 'Using cached data (throttled)' };
+  }
+
+  isSyncing = true;
   try {
     console.log('--- Starting POS Sync ---');
     
@@ -82,9 +100,12 @@ export const syncWithPOS = async () => {
     }
 
     console.log(`✅ Sync Complete: ${updatedCount} products processed.`);
+    lastSyncTime = Date.now();
     return { success: true, updated: updatedCount };
   } catch (error) {
     console.error('❌ POS Sync Failed:', error.message);
     return { success: false, error: error.message };
+  } finally {
+    isSyncing = false;
   }
 };
