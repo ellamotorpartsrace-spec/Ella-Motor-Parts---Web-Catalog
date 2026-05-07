@@ -19,7 +19,7 @@ export default function AdminLayout({ children }) {
 
   const menuItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
-    { name: 'New Component', path: '/admin/products/new', icon: Package },
+    
   ];
 
   return (

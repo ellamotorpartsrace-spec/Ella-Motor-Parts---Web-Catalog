@@ -281,6 +281,7 @@ export default function ProductDetail() {
               <div className="space-y-6">
                 {[
                   { label: 'SKU Identifier', val: product.sku || 'N/A', icon: Tag },
+                  { label: 'Variation', val: product.specs?.variation || 'Standard', icon: Zap },
                   { label: 'Manufacturer', val: product.brand || 'Universal', icon: ShieldCheck },
                   { label: 'Category', val: product.category || 'Maintenance', icon: Box },
                   { label: 'Condition', val: 'Factory Original', icon: Info },

@@ -9,8 +9,7 @@ import {
   Search,
   Camera,
   RefreshCw,
-  Clock,
-  Edit
+  Clock
 } from 'lucide-react';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
@@ -46,21 +45,28 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchProducts();
     
-    // Auto-sync check: If no products were updated in the last hour, trigger a background sync
+    // Live Auto-Refresh: Keep the dashboard fresh every 60 seconds
+    const refreshTimer = setInterval(() => {
+      fetchProducts();
+      fetchStats();
+    }, 60000);
+
+    return () => clearInterval(refreshTimer);
+  }, [currentPage, debouncedSearch]);
+
+  // Separate Effect for Auto-Sync (Only on mount)
+  useEffect(() => {
     const checkAutoSync = async () => {
       try {
-        const { data } = await api.get('/products?limit=1&sort=updated_at&order=DESC');
+        const { data } = await api.get('/products?limit=1&sort=created_at&order=DESC');
         if (data.products.length > 0) {
-          const lastUpdate = new Date(data.products[0].updated_at);
+          const lastUpdate = new Date(data.products[0].created_at);
           const staleThreshold = new Date(Date.now() - 15 * 60 * 1000); // 15 minutes
           
           if (lastUpdate < staleThreshold) {
             console.log('🔄 Inventory is stale (>15min). Triggering auto-sync...');
-            handleSync();
+            handleSync(true); // Silent sync
           }
-        } else {
-          // If no products at all, sync anyway
-          handleSync();
         }
       } catch (err) {
         console.error('Auto-sync check failed:', err);
@@ -68,7 +74,9 @@ export default function AdminDashboard() {
     };
     
     checkAutoSync();
-  }, [debouncedSearch, currentPage]);
+    const interval = setInterval(checkAutoSync, 15 * 60 * 1000); // Check every 15 mins
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchStats = async () => {
     try {
@@ -95,7 +103,9 @@ export default function AdminDashboard() {
         params: {
           page: currentPage,
           limit: itemsPerPage,
-          search: debouncedSearch
+          search: debouncedSearch,
+          sort: 'created_at',
+          order: 'DESC'
         }
       });
       setProducts(data.products);
@@ -104,8 +114,8 @@ export default function AdminDashboard() {
       // Find the most recent update time
       if (data.products.length > 0) {
         const newest = data.products.reduce((acc, p) => 
-          new Date(p.updated_at) > new Date(acc) ? p.updated_at : acc, 
-          data.products[0].updated_at
+          new Date(p.created_at) > new Date(acc) ? p.created_at : acc, 
+          data.products[0].created_at
         );
         setLastSync(newest);
       }
@@ -117,17 +127,26 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleSync = async () => {
+  const handleSync = async (silent = false) => {
+    if (syncing) return;
     setSyncing(true);
-    const toastId = toast.loading('Synchronizing with POS inventory...');
+    let toastId;
+    if (!silent) {
+      toastId = toast.loading('Synchronizing with POS inventory...');
+    }
+
     try {
       const { data } = await api.post('/sync/pos-now');
-      toast.success(data.message, { id: toastId });
+      if (!silent) {
+        toast.success(data.message, { id: toastId });
+      }
       fetchProducts();
       fetchStats();
     } catch (error) {
       console.error('Sync error:', error);
-      toast.error('Sync failed. Ensure local POS server is running.', { id: toastId });
+      if (!silent) {
+        toast.error('Sync failed. Ensure local POS server is running.', { id: toastId });
+      }
     } finally {
       setSyncing(false);
     }
@@ -278,9 +297,6 @@ export default function AdminDashboard() {
                        <Link to={`/admin/products/${product.id}/photos`} className="w-9 h-9 rounded-xl bg-white text-secondary-400 flex items-center justify-center hover:bg-primary-600 hover:text-white border border-secondary-100 transition-all shadow-sm" title="Manage Photos">
                          <Camera size={14} />
                        </Link>
-                       <Link to={`/admin/products/edit/${product.id}`} className="w-9 h-9 rounded-xl bg-white text-secondary-400 flex items-center justify-center hover:bg-secondary-950 hover:text-white border border-secondary-100 transition-all shadow-sm" title="Edit Component">
-                         <Edit size={14} />
-                       </Link>
                     </div>
                   </div>
                 </div>
@@ -357,9 +373,6 @@ export default function AdminDashboard() {
                            </Link>
                            <Link to={`/admin/products/${product.id}/photos`} className="w-10 h-10 rounded-xl bg-white text-secondary-400 flex items-center justify-center hover:bg-primary-600 hover:text-white border border-secondary-100 transition-all shadow-sm" title="Manage Photos">
                              <Camera size={16} />
-                           </Link>
-                           <Link to={`/admin/products/edit/${product.id}`} className="w-10 h-10 rounded-xl bg-white text-secondary-400 flex items-center justify-center hover:bg-secondary-950 hover:text-white border border-secondary-100 transition-all shadow-sm" title="Edit Component">
-                             <Edit size={16} />
                            </Link>
                          </div>
                       </td>

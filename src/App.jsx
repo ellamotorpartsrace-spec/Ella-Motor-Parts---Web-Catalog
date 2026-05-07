@@ -7,7 +7,6 @@ import Products from './pages/Products';
 import ProductDetail from './pages/ProductDetail';
 import Login from './pages/Login';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminProductForm from './pages/admin/AdminProductForm';
 import AdminPhotoManager from './pages/admin/AdminPhotoManager';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
@@ -24,8 +23,6 @@ export default function App() {
           <Routes>
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/products/:id/photos" element={<AdminPhotoManager />} />
-            <Route path="/admin/products/new" element={<AdminProductForm />} />
-            <Route path="/admin/products/edit/:id" element={<AdminProductForm />} />
           </Routes>
         </AdminLayout>
       </AdminRoute>
@@ -41,11 +38,7 @@ export default function App() {
         <Route path="/products/:id" element={<ProductDetail />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
-        
-        {/* The Private Entrance - Standalone */}
         <Route path="/admin/login" element={<Login />} />
-        
-        {/* Redirect unknown routes to home */}
         <Route path="*" element={<Home />} />
       </Routes>
     </Layout>

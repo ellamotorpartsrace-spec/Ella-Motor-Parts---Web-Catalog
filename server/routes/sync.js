@@ -11,9 +11,11 @@ const router = express.Router();
  * MANUAL SYNC (Triggered by Admin)
  */
 router.post('/pos-now', isAdmin, async (req, res) => {
-  const result = await syncWithPOS();
+  const result = await syncWithPOS(true);
   if (result.success) {
-    res.json({ message: `Successfully synced ${result.updated} products.` });
+    res.json({ 
+      message: `Sync Complete: POS sent ${result.posCount || 0} items. We saved ${result.totalProcessed || 0} unique products. The website now has exactly ${result.dbCount || 0} products in total.` 
+    });
   } else {
     res.status(500).json({ message: 'Sync failed', error: result.error });
   }
@@ -42,7 +44,8 @@ router.post('/webhook', async (req, res) => {
   }
 
   if (itemsToSync.length > 0) {
-    console.log(`📡 Live Webhook Received (${event}): Syncing ${itemsToSync.length} items...`);
+    console.log(`📡 Webhook Received: ${event} | Items: ${itemsToSync.length}`);
+    if (product) console.log(`🆕 Syncing Product: ${product.name} (SKU: ${product.sku})`);
     
     try {
       for (const item of itemsToSync) {
@@ -59,9 +62,11 @@ router.post('/webhook', async (req, res) => {
         if (item.name) syncData.name = item.name;
         if (item.price !== undefined) syncData.price = item.price;
         if (item.stock !== undefined) syncData.stock = item.stock;
-        if (item.category) syncData.category = item.category;
-        if (item.brand) syncData.brand = item.brand;
-        if (item.description) syncData.description = item.description;
+        
+        // Ensure new products have required fields
+        syncData.category = item.category || 'Maintenance';
+        syncData.brand = item.brand || 'Universal';
+        syncData.description = item.description || `Premium ${item.name || 'component'} for your vehicle.`;
 
         // Use upsert to handle new products (inserts) or existing products (updates)
         const { error } = await supabase

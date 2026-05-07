@@ -64,11 +64,11 @@ const startServer = async () => {
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     
-    // Run sync every 5 minutes (300000 ms) for high-accuracy inventory
+    // Run sync every 1 minute (60000 ms) for near-live inventory
     setInterval(() => {
       console.log('⏰ Running scheduled POS sync...');
       syncWithPOS();
-    }, 300000);
+    }, 60000);
   });
 };
 

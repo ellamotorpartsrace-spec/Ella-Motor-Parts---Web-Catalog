@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, RefreshCw, ShieldCheck } from 'lucide-react';
 import api from '../api/axios';
 import useAuthStore from '../store/authStore';
 import toast from 'react-hot-toast';
-import Logo from '../components/Logo';
 
 export default function Login() {
   const [email, setEmail] = useState('admin@ellamotorparts.ph');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuthStore();
@@ -20,71 +20,108 @@ export default function Login() {
     try {
       const { data } = await api.post('/auth/login', { email, password });
       login(data.user, data.token);
-      toast.success('Access Granted. Welcome Admin.');
-      // Force full page reload so AdminRoute reads auth state fresh from localStorage
+      toast.success('Access Authorized.');
       window.location.href = '/admin';
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Login failed.');
+      toast.error(err.response?.data?.message || 'Invalid credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-6">
+    <div className="min-h-[85vh] flex items-center justify-center px-6 pt-32 pb-20 relative overflow-hidden">
+      
+      {/* Premium Background Detail */}
+      <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/clean-gray-paper.png')]" />
+
+      <style>{`
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus {
+          -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+          -webkit-text-fill-color: #0f172a !important;
+          transition: background-color 5000s ease-in-out 0s;
+        }
+      `}</style>
+
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-[440px] relative z-10"
       >
-        <div className="text-center mb-12 flex flex-col items-center">
-          <Logo className="h-24 mb-16" />
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-secondary-400 italic">Secure Management Access</p>
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-50 rounded-3xl border border-primary-100 mb-6 text-primary-600">
+            <ShieldCheck size={32} strokeWidth={2} />
+          </div>
+          <h1 className="text-secondary-950 font-display font-black text-3xl tracking-tighter uppercase">Admin Console</h1>
+          <p className="text-secondary-400 text-[10px] font-black uppercase tracking-[0.3em] mt-2">Ella Motor Parts Management</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white p-10 rounded-[3rem] border border-secondary-100 shadow-2xl shadow-black/5 space-y-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-secondary-400 uppercase tracking-widest ml-1">Email Terminal</label>
-            <div className="relative">
-              <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-secondary-300" size={18} />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full pl-14 pr-6 py-4 bg-secondary-50/50 rounded-2xl border border-transparent focus:bg-white focus:border-secondary-900 transition-all font-bold text-sm outline-none"
-                placeholder="admin@ellamotorparts.ph"
-              />
-            </div>
-          </div>
+        <div className="bg-white p-8 sm:p-12 rounded-[3.5rem] shadow-[0_40px_80px_-20px_rgba(0,0,0,0.12)] border border-secondary-100/50">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-secondary-400 uppercase tracking-widest ml-2">Email Terminal</label>
+                <div className="flex items-center bg-secondary-50/50 rounded-2xl border-2 border-transparent focus-within:border-primary-500 focus-within:bg-white transition-all overflow-hidden h-[60px]">
+                  <div className="pl-6 pr-4 text-secondary-300">
+                    <Mail size={20} strokeWidth={2} />
+                  </div>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full h-full bg-transparent font-bold text-secondary-900 text-sm outline-none placeholder:text-secondary-200"
+                    placeholder="admin@ellamotorparts.ph"
+                  />
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-secondary-400 uppercase tracking-widest ml-1">Secure Key</label>
-            <div className="relative">
-              <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-secondary-300" size={18} />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full pl-14 pr-6 py-4 bg-secondary-50/50 rounded-2xl border border-transparent focus:bg-white focus:border-secondary-900 transition-all font-bold text-sm outline-none"
-                placeholder="••••••••"
-              />
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-secondary-400 uppercase tracking-widest ml-2">Security Key</label>
+                <div className="flex items-center bg-secondary-50/50 rounded-2xl border-2 border-transparent focus-within:border-primary-500 focus-within:bg-white transition-all overflow-hidden h-[60px]">
+                  <div className="pl-6 pr-4 text-secondary-300">
+                    <Lock size={20} strokeWidth={2} />
+                  </div>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full h-full bg-transparent font-bold text-secondary-900 text-sm outline-none placeholder:text-secondary-200"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="px-6 text-secondary-300 hover:text-primary-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-5 bg-secondary-950 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-black transition-all flex items-center justify-center gap-3 shadow-xl shadow-secondary-950/20 disabled:opacity-50"
-          >
-            {loading ? 'Authenticating...' : (
-              <>
-                <LogIn size={18} /> Access System
-              </>
-            )}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-[64px] bg-secondary-950 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-black active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-2xl shadow-secondary-950/20 disabled:opacity-50"
+            >
+              {loading ? (
+                <RefreshCw className="animate-spin" size={20} />
+              ) : (
+                "Authorize Login"
+              )}
+            </button>
+          </form>
+        </div>
+
+        <p className="text-center mt-12 text-[10px] font-black text-secondary-300 uppercase tracking-[0.4em] opacity-50">
+          V4.0.2 Stable Build
+        </p>
       </motion.div>
     </div>
   );
