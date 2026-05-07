@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { supabase } from '../config/supabase.js';
+import { clearCache } from './cache.js';
 
 let isSyncing = false;
 let lastSyncTime = 0;
@@ -101,6 +102,10 @@ export const syncWithPOS = async (force = false) => {
 
     console.log(`✅ Sync Complete: ${updatedCount} products processed.`);
     lastSyncTime = Date.now();
+    
+    // Clear the web server cache so the changes reflect immediately (categories, counts, etc)
+    clearCache();
+    
     return { success: true, updated: updatedCount };
   } catch (error) {
     console.error('❌ POS Sync Failed:', error.message);

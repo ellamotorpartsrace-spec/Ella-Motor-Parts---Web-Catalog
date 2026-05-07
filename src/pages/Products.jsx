@@ -54,21 +54,6 @@ export default function Products() {
   const currentOrder = searchParams.get('order') || 'DESC';
   const currentPage = parseInt(searchParams.get('page')) || 1;
 
-  useEffect(() => {
-    const loadSidebarData = async () => {
-      if (brands.length > 0 && categories.length > 0) return;
-      try {
-        const [{ data: bData }, { data: cData }] = await Promise.all([
-          api.get('/products/brands'),
-          api.get('/products/categories')
-        ]);
-        setSidebarData(bData.brands || [], cData.categories || []);
-      } catch (err) {
-        console.error('Sidebar err:', err);
-      }
-    };
-    loadSidebarData();
-  }, []);
 
   useEffect(() => {
     const currentFilters = {
@@ -108,7 +93,20 @@ export default function Products() {
       }
     };
 
+    const loadSidebarData = async () => {
+      try {
+        const [{ data: bData }, { data: cData }] = await Promise.all([
+          api.get('/products/brands'),
+          api.get('/products/categories')
+        ]);
+        setSidebarData(bData.brands || [], cData.categories || []);
+      } catch (err) {
+        console.error('Sidebar err:', err);
+      }
+    };
+
     loadProducts();
+    loadSidebarData();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage, currentCategory, currentBrand, currentSearch, currentSort, currentOrder]);
 

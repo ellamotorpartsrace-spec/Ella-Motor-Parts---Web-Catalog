@@ -9,5 +9,7 @@ export const CATEGORIES = [
   { name: 'Maintenance', icon: '🛠️', desc: 'Oil, Filters, Plugs', color: 'green' },
 ];
 
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-export const IMAGE_URL = import.meta.env.VITE_IMAGE_URL || 'http://localhost:5000';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+
+export const API_URL = import.meta.env.VITE_API_URL || `${BASE_URL}/api`;
+export const IMAGE_URL = import.meta.env.VITE_IMAGE_URL || BASE_URL;

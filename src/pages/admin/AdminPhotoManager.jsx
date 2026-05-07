@@ -7,19 +7,32 @@ import { IMAGE_URL } from '../../utils/constants';
 
 function parseImages(imageField) {
   if (!imageField || imageField === '/images/default-product.png') return [];
+  if (Array.isArray(imageField)) return imageField;
+  
   try {
-    const parsed = JSON.parse(imageField);
-    if (Array.isArray(parsed)) return parsed;
-    return [imageField];
-  } catch {
-    if (imageField.includes(',')) return imageField.split(',').map(s => s.trim());
-    return [imageField];
+    if (typeof imageField === 'string') {
+      if (imageField.startsWith('[') || imageField.startsWith('{')) {
+        const parsed = JSON.parse(imageField);
+        if (Array.isArray(parsed)) return parsed;
+        return [imageField];
+      }
+      if (imageField.includes(',')) {
+        return imageField.split(',').map(s => s.trim()).filter(Boolean);
+      }
+      return [imageField];
+    }
+  } catch (e) {
+    console.error('Image parse error:', e);
   }
+  return typeof imageField === 'string' ? [imageField] : [];
 }
 
 function resolveUrl(img) {
-  if (!img) return '/placeholder.png';
-  return img.startsWith('/uploads') ? `${IMAGE_URL}${img}` : img;
+  if (!img) return '/images/default-product.png';
+  if (img.startsWith('http')) return img;
+  if (img.startsWith('/uploads')) return `${IMAGE_URL}${img}`;
+  if (img.startsWith('/images')) return img;
+  return img;
 }
 
 export default function AdminPhotoManager() {

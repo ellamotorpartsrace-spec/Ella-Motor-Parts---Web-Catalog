@@ -3,6 +3,7 @@ import axios from 'axios';
 import { supabase } from '../config/supabase.js';
 import { syncWithPOS } from '../utils/posSync.js';
 import { isAdmin } from '../middleware/auth.js';
+import { clearCache } from '../utils/cache.js';
 
 const router = express.Router();
 
@@ -29,26 +30,49 @@ router.post('/webhook', async (req, res) => {
     return res.status(401).json({ message: 'Unauthorized Webhook' });
   }
 
-  const { event, updates } = req.body;
-
+  const { event, updates, product } = req.body;
+  
+  // Handle both bulk updates (stock_update) and single product events (product_added, product_updated)
+  const itemsToSync = [];
+  
   if (event === 'stock_update' && Array.isArray(updates)) {
-    console.log(`📡 Live Webhook Received: Syncing ${updates.length} items...`);
+    itemsToSync.push(...updates);
+  } else if ((event === 'product_added' || event === 'product_updated') && product) {
+    itemsToSync.push(product);
+  }
+
+  if (itemsToSync.length > 0) {
+    console.log(`📡 Live Webhook Received (${event}): Syncing ${itemsToSync.length} items...`);
     
     try {
-      for (const item of updates) {
-        if (!item.sku) continue;
+      for (const item of itemsToSync) {
+        if (!item.sku && !item.id) continue;
+        
+        const sku = item.sku || `POS_VAR_${item.id}`;
+        
+        // Prepare data for upsert
+        const syncData = {
+          sku: sku,
+          updated_at: new Date().toISOString()
+        };
+        
+        if (item.name) syncData.name = item.name;
+        if (item.price !== undefined) syncData.price = item.price;
+        if (item.stock !== undefined) syncData.stock = item.stock;
+        if (item.category) syncData.category = item.category;
+        if (item.brand) syncData.brand = item.brand;
+        if (item.description) syncData.description = item.description;
 
+        // Use upsert to handle new products (inserts) or existing products (updates)
         const { error } = await supabase
           .from('products')
-          .update({
-            stock: item.stock,
-            price: item.price,
-            updated_at: new Date().toISOString()
-          })
-          .eq('sku', item.sku);
+          .upsert(syncData, { onConflict: 'sku' });
 
-        if (error) console.error(`Error updating SKU ${item.sku}:`, error.message);
+        if (error) console.error(`Error syncing SKU ${sku}:`, error.message);
       }
+      
+      // Clear server cache so categories and total products reflect immediately
+      clearCache();
       
       return res.json({ success: true, message: 'Website catalog updated live' });
     } catch (err) {

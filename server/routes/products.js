@@ -7,20 +7,8 @@ import { isAdmin } from '../middleware/auth.js';
 import { convertToWebP, getWebPFilename } from '../utils/imageProcessor.js';
 
 const router = express.Router();
-const cache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
-const getCachedData = (key) => {
-  const cached = cache.get(key);
-  if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
-    return cached.data;
-  }
-  return null;
-};
-
-const setCachedData = (key, data) => {
-  cache.set(key, { data, timestamp: Date.now() });
-};
+import { getCachedData, setCachedData, clearCache } from '../utils/cache.js';
+export { clearCache }; // Re-export for other routes if needed
 
 // Multer configuration for image uploads (Memory Storage for processing)
 const storage = multer.memoryStorage();

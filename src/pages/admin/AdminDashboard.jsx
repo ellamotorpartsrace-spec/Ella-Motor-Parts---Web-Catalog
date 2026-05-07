@@ -278,7 +278,7 @@ export default function AdminDashboard() {
                        <Link to={`/admin/products/${product.id}/photos`} className="w-9 h-9 rounded-xl bg-white text-secondary-400 flex items-center justify-center hover:bg-primary-600 hover:text-white border border-secondary-100 transition-all shadow-sm" title="Manage Photos">
                          <Camera size={14} />
                        </Link>
-                       <Link to={`/admin/products/${product.id}`} className="w-9 h-9 rounded-xl bg-white text-secondary-400 flex items-center justify-center hover:bg-secondary-950 hover:text-white border border-secondary-100 transition-all shadow-sm" title="Edit Component">
+                       <Link to={`/admin/products/edit/${product.id}`} className="w-9 h-9 rounded-xl bg-white text-secondary-400 flex items-center justify-center hover:bg-secondary-950 hover:text-white border border-secondary-100 transition-all shadow-sm" title="Edit Component">
                          <Edit size={14} />
                        </Link>
                     </div>
@@ -358,7 +358,7 @@ export default function AdminDashboard() {
                            <Link to={`/admin/products/${product.id}/photos`} className="w-10 h-10 rounded-xl bg-white text-secondary-400 flex items-center justify-center hover:bg-primary-600 hover:text-white border border-secondary-100 transition-all shadow-sm" title="Manage Photos">
                              <Camera size={16} />
                            </Link>
-                           <Link to={`/admin/products/${product.id}`} className="w-10 h-10 rounded-xl bg-white text-secondary-400 flex items-center justify-center hover:bg-secondary-950 hover:text-white border border-secondary-100 transition-all shadow-sm" title="Edit Component">
+                           <Link to={`/admin/products/edit/${product.id}`} className="w-10 h-10 rounded-xl bg-white text-secondary-400 flex items-center justify-center hover:bg-secondary-950 hover:text-white border border-secondary-100 transition-all shadow-sm" title="Edit Component">
                              <Edit size={16} />
                            </Link>
                          </div>
