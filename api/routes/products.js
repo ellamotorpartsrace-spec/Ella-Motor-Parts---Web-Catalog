@@ -106,19 +106,30 @@ const deleteImagesFromSupabase = async (urls) => {
 // GET /api/products/export/skus - Export SKU list for bulk matching
 router.get('/export/skus', isAdmin, async (req, res) => {
   try {
-    const { data: products, error } = await supabase
-      .from('products')
-      .select('name, sku, category, brand, image')
-      .order('name', { ascending: true });
+    let allProducts = [];
+    let from = 0;
+    const PAGE_SIZE = 1000;
+    let hasMore = true;
 
-    if (error) throw error;
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('products')
+        .select('name, sku, category, brand, image')
+        .order('name', { ascending: true })
+        .range(from, from + PAGE_SIZE - 1);
+      
+      if (error) throw error;
+      allProducts = allProducts.concat(data);
+      if (data.length < PAGE_SIZE) hasMore = false;
+      from += PAGE_SIZE;
+    }
 
     // Convert to CSV
     const headers = ['Product Name', 'SKU', 'Category', 'Brand', 'Has Image?'];
-    const rows = products.map(p => {
+    const rows = allProducts.map(p => {
       const hasImage = p.image && p.image !== '/images/default-product.png' ? 'YES' : 'NO';
       return [
-        `"${p.name.replace(/"/g, '""')}"`,
+        `"${(p.name || '').replace(/"/g, '""')}"`,
         `"${(p.sku || '').replace(/"/g, '""')}"`,
         `"${(p.category || '').replace(/"/g, '""')}"`,
         `"${(p.brand || '').replace(/"/g, '""')}"`,
