@@ -103,22 +103,20 @@ export const syncWithPOS = async (force = false) => {
     const newProducts = [];
     const updates = [];
 
-    const posDomain = new URL(posUrl).origin;
-
     dedupedProducts.forEach((posItem) => {
       const uniqueSku = posItem.sku || (posItem.id ? `POS_VAR_${posItem.id}` : null) || (posItem.product_id ? `POS_PID_${posItem.product_id}` : null);
       const variation = posItem.variation && posItem.variation !== 'Default' ? posItem.variation : '';
       const fullName = variation ? `${posItem.name} (${variation})` : posItem.name;
-      const fullImageUrl = posItem.image ? (posItem.image.startsWith('http') ? posItem.image : `${posDomain}${posItem.image}`) : null;
 
       if (existingSkus.has(uniqueSku)) {
+        // ✅ ONLY update Price and Stock — never touch photos (they are managed manually on the web catalog)
         updates.push({
           sku: uniqueSku,
           price: posItem.price,
-          stock: posItem.stock,
-          image: fullImageUrl // Update image in case they changed it in POS
+          stock: posItem.stock
         });
       } else {
+        // New product: add with no image (photos are added manually later)
         newProducts.push({
           sku: uniqueSku,
           name: fullName,
@@ -127,8 +125,7 @@ export const syncWithPOS = async (force = false) => {
           brand: posItem.brand || 'Universal',
           category: posItem.category || 'Maintenance',
           description: posItem.description || `High-performance ${fullName} for your motorcycle.`,
-          specs: { variation },
-          image: fullImageUrl
+          specs: { variation }
         });
       }
     });

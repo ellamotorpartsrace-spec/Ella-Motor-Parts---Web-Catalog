@@ -24,7 +24,7 @@ export default function AdminDashboard() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [syncing, setSyncing] = useState(false);
-  const [lastSync, setLastSync] = useState(null);
+  const [lastSync, setLastSync] = useState(null); // tracks actual sync time
   const itemsPerPage = 15;
 
   useEffect(() => {
@@ -110,15 +110,6 @@ export default function AdminDashboard() {
       });
       setProducts(data.products);
       setPagination(data.pagination);
-      
-      // Find the most recent update time
-      if (data.products.length > 0) {
-        const newest = data.products.reduce((acc, p) => 
-          new Date(p.created_at) > new Date(acc) ? p.created_at : acc, 
-          data.products[0].created_at
-        );
-        setLastSync(newest);
-      }
     } catch (error) {
       console.error('Fetch products error:', error);
       toast.error('Failed to load components.');
@@ -132,21 +123,28 @@ export default function AdminDashboard() {
     setSyncing(true);
     let toastId;
     if (!silent) {
-      toastId = toast.loading('Synchronizing with POS inventory...');
+      toastId = toast.loading('🔄 Connecting to Online POS...', { duration: Infinity });
     }
 
     try {
       const { data } = await api.post('/sync/pos-now');
+      const now = new Date();
+      setLastSync(now);
       if (!silent) {
-        toast.success(data.message, { id: toastId });
+        // Show a detailed breakdown of what happened
+        const msg = data.message || `✅ Sync complete! ${data.dbCount ?? '?'} products now in catalog.`;
+        toast.success(msg, { id: toastId, duration: 6000 });
       }
       fetchProducts();
       fetchStats();
     } catch (error) {
       console.error('Sync error:', error);
       if (!silent) {
-        const errorMsg = error.response?.data?.message || error.response?.data?.error || 'Sync failed. Check your API settings.';
-        toast.error(errorMsg, { id: toastId });
+        const errorMsg = 
+          error.response?.data?.error ||
+          error.response?.data?.message ||
+          (error.code === 'ECONNABORTED' ? '⏱️ Sync timed out. The POS took too long to respond.' : '❌ Sync failed. Check Vercel logs for details.');
+        toast.error(errorMsg, { id: toastId, duration: 8000 });
       }
     } finally {
       setSyncing(false);
@@ -183,14 +181,14 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
-            {lastSync && (
-              <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-secondary-100 rounded-xl shadow-sm">
-                <Clock size={12} className="text-secondary-400" />
-                <span className="text-[9px] font-black text-secondary-500 uppercase tracking-widest">
-                  Last Sync: {new Date(lastSync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            )}
+            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white border border-secondary-100 rounded-xl shadow-sm">
+              <Clock size={12} className={lastSync ? 'text-emerald-500' : 'text-secondary-400'} />
+              <span className="text-[9px] font-black text-secondary-500 uppercase tracking-widest">
+                {lastSync 
+                  ? `Last Sync: ${lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}` 
+                  : 'Not synced yet'}
+              </span>
+            </div>
             <button
               onClick={handleSync}
               disabled={syncing}
