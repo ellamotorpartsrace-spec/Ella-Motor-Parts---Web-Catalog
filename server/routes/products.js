@@ -349,12 +349,11 @@ router.post('/', isAdmin, upload.array('images', 10), async (req, res) => {
     let imagePaths = [];
 
     if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
+      imagePaths = await Promise.all(req.files.map(async (file) => {
         const webpBuffer = await convertToWebP(file.buffer);
         const filename = getWebPFilename(file.originalname);
-        const url = await uploadToSupabase(webpBuffer, filename);
-        imagePaths.push(url);
-      }
+        return uploadToSupabase(webpBuffer, filename);
+      }));
     }
 
     const specsJson = typeof specs === 'string' ? JSON.parse(specs || '{}') : (specs || {});
@@ -402,17 +401,13 @@ router.put('/:id', isAdmin, upload.array('images', 10), async (req, res) => {
     };
 
     if (req.files && req.files.length > 0) {
-      const imagePaths = [];
-      for (const file of req.files) {
+      const newUrls = await Promise.all(req.files.map(async (file) => {
         const webpBuffer = await convertToWebP(file.buffer);
         const filename = getWebPFilename(file.originalname);
-        const url = await uploadToSupabase(webpBuffer, filename);
-        imagePaths.push(url);
-      }
-      
-      // If we are overriding the image entirely or appending
+        return uploadToSupabase(webpBuffer, filename);
+      }));
       const existingUrls = req.body.existingImages ? JSON.parse(req.body.existingImages) : [];
-      const allUrls = [...existingUrls, ...imagePaths];
+      const allUrls = [...existingUrls, ...newUrls];
       updates.image = allUrls.length > 1 ? JSON.stringify(allUrls) : allUrls[0];
     } else if (req.body.existingImages) {
       const existingUrls = JSON.parse(req.body.existingImages);
@@ -475,14 +470,14 @@ router.patch('/:id/images', isAdmin, upload.array('images', 10), async (req, res
       }
     }
 
-    // Upload new files
+    // Upload new files in parallel
     if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
+      const newUrls = await Promise.all(req.files.map(async (file) => {
         const webpBuffer = await convertToWebP(file.buffer);
         const filename = getWebPFilename(file.originalname);
-        const url = await uploadToSupabase(webpBuffer, filename);
-        currentImages.push(url);
-      }
+        return uploadToSupabase(webpBuffer, filename);
+      }));
+      currentImages.push(...newUrls);
     }
 
     // Store as JSON array if > 1, else plain string
