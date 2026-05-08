@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react';
 import { 
-  CloudUpload as CloudArrowUp, 
+  Upload as CloudArrowUp, 
   FileText as FileCsv, 
-  CheckCircle, 
-  XCircle, 
+  CheckCircle2 as CheckCircle, 
+  X as XCircle, 
   RefreshCw as ArrowClockwise, 
   Info,
   Package,
