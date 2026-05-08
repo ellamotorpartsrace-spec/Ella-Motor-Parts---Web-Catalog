@@ -12,7 +12,6 @@
     }
   ],
   "routes": [
-    { "handle": "filesystem" },
     {
       "src": "/api/(.*)",
       "dest": "server/server.js"
@@ -20,6 +19,10 @@
     {
       "src": "/uploads/(.*)",
       "dest": "server/public/uploads/$1"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
     },
     {
       "src": "/(.*)",
