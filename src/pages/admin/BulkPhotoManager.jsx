@@ -10,7 +10,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import api from '../../api/axios';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 export default function BulkPhotoManager() {
   const [isUploading, setIsUploading] = useState(false);
