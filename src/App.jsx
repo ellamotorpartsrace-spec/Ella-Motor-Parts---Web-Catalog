@@ -1,4 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import AdminLayout from './components/AdminLayout';
 import AdminRoute from './components/AdminRoute';
@@ -18,29 +19,35 @@ export default function App() {
   // ── Admin Workspace Flow ──
   if (isAdminPath) {
     return (
-      <AdminRoute>
-        <AdminLayout>
-          <Routes>
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/products/:id/photos" element={<AdminPhotoManager />} />
-          </Routes>
-        </AdminLayout>
-      </AdminRoute>
+      <>
+        <Toaster position="top-right" toastOptions={{ duration: 5000 }} />
+        <AdminRoute>
+          <AdminLayout>
+            <Routes>
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/products/:id/photos" element={<AdminPhotoManager />} />
+            </Routes>
+          </AdminLayout>
+        </AdminRoute>
+      </>
     );
   }
 
   // ── Customer Showroom & Private Login Flow ──
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/products" element={<Products />} />
-        <Route path="/products/:id" element={<ProductDetail />} />
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/admin/login" element={<Login />} />
-        <Route path="*" element={<Home />} />
-      </Routes>
-    </Layout>
+    <>
+      <Toaster position="top-right" toastOptions={{ duration: 5000 }} />
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/products/:id" element={<ProductDetail />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/admin/login" element={<Login />} />
+          <Route path="*" element={<Home />} />
+        </Routes>
+      </Layout>
+    </>
   );
 }
