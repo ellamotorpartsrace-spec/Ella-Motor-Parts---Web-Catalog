@@ -31,6 +31,10 @@ export const syncWithPOS = async (force = false) => {
     const posUrl = process.env.POS_API_URL;
     const apiKey = process.env.POS_API_KEY;
 
+    if (!posUrl) {
+      throw new Error('POS_API_URL is not defined in environment variables.');
+    }
+
     console.log(`📡 Fetching from POS: ${posUrl}`);
     
     // Add a high limit to the POS URL to ensure we get everything

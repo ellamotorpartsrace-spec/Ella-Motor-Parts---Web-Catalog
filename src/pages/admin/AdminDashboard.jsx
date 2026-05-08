@@ -145,7 +145,8 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Sync error:', error);
       if (!silent) {
-        toast.error('Sync failed. Ensure local POS server is running.', { id: toastId });
+        const errorMsg = error.response?.data?.message || error.response?.data?.error || 'Sync failed. Check your API settings.';
+        toast.error(errorMsg, { id: toastId });
       }
     } finally {
       setSyncing(false);
