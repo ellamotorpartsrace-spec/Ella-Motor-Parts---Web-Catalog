@@ -26,11 +26,11 @@ const upload = multer({
 });
 
 // Helper function to upload to Supabase Storage
-const uploadToSupabase = async (buffer, filename) => {
+const uploadToSupabase = async (buffer, filename, contentType = 'image/webp') => {
   const { data, error } = await supabase.storage
     .from(STORAGE_BUCKET)
     .upload(filename, buffer, {
-      contentType: 'image/webp',
+      contentType,
       cacheControl: '3600',
       upsert: false
     });
