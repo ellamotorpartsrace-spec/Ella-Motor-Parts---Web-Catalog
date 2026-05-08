@@ -1,14 +1,14 @@
 import { useState, useRef } from 'react';
 import { 
-  CloudArrowUp, 
-  FileCsv, 
+  CloudUpload as CloudArrowUp, 
+  FileText as FileCsv, 
   CheckCircle, 
   XCircle, 
-  ArrowClockwise, 
+  RefreshCw as ArrowClockwise, 
   Info,
   Package,
   Image as ImageIcon
-} from '@phosphor-icons/react';
+} from 'lucide-react';
 import api from '../../api/axios';
 import { toast } from 'react-hot-toast';
 
@@ -120,7 +120,7 @@ export default function BulkPhotoManager() {
           disabled={isExporting}
           className="flex items-center gap-2 px-6 py-3 bg-secondary-950 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-secondary-950/20 disabled:opacity-50"
         >
-          {isExporting ? <ArrowClockwise className="animate-spin" size={16} /> : <FileCsv size={18} weight="fill" />}
+          {isExporting ? <ArrowClockwise className="animate-spin" size={16} /> : <FileCsv size={18} />}
           Download SKU Cheat-Sheet
         </button>
       </div>
@@ -154,7 +154,7 @@ export default function BulkPhotoManager() {
               {isUploading ? (
                 <ArrowClockwise className="text-primary-600 animate-spin" size={32} />
               ) : (
-                <CloudArrowUp className="text-secondary-400" size={40} weight="duotone" />
+                <CloudArrowUp className="text-secondary-400" size={40} />
               )}
             </div>
             
@@ -177,7 +177,7 @@ export default function BulkPhotoManager() {
           {/* Guidelines */}
           <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 flex gap-4">
             <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
-              <Info size={20} weight="fill" className="text-amber-600" />
+              <Info size={20} className="text-amber-600" />
             </div>
             <div>
               <h4 className="text-sm font-black text-amber-900 uppercase tracking-wider mb-1">Upload Guidelines</h4>
@@ -206,7 +206,7 @@ export default function BulkPhotoManager() {
           <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
             {results.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
-                <Package size={40} weight="thin" className="mb-4" />
+                <Package size={40} className="mb-4" />
                 <p className="text-xs font-bold uppercase tracking-widest">No activity yet</p>
               </div>
             ) : (
@@ -218,7 +218,7 @@ export default function BulkPhotoManager() {
                   }`}
                 >
                   <div className={`mt-0.5 ${res.status === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                    {res.status === 'success' ? <CheckCircle size={20} weight="fill" /> : <XCircle size={20} weight="fill" />}
+                    {res.status === 'success' ? <CheckCircle size={20} /> : <XCircle size={20} />}
                   </div>
                   <div className="min-w-0">
                     <p className="text-[10px] font-black text-secondary-400 uppercase tracking-tighter truncate">
