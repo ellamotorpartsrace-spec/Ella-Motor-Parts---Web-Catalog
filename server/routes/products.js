@@ -101,6 +101,98 @@ const deleteImagesFromSupabase = async (urls) => {
   }
 };
 
+// --- BULK OPERATIONS ROUTES (Must be before parameterized routes like /:id) ---
+
+// GET /api/products/export/skus - Export SKU list for bulk matching
+router.get('/export/skus', isAdmin, async (req, res) => {
+  try {
+    const { data: products, error } = await supabase
+      .from('products')
+      .select('name, sku, category, brand, image')
+      .order('name', { ascending: true });
+
+    if (error) throw error;
+
+    // Convert to CSV
+    const headers = ['Product Name', 'SKU', 'Category', 'Brand', 'Has Image?'];
+    const rows = products.map(p => {
+      const hasImage = p.image && p.image !== '/images/default-product.png' ? 'YES' : 'NO';
+      return [
+        `"${p.name.replace(/"/g, '""')}"`,
+        `"${(p.sku || '').replace(/"/g, '""')}"`,
+        `"${(p.category || '').replace(/"/g, '""')}"`,
+        `"${(p.brand || '').replace(/"/g, '""')}"`,
+        hasImage
+      ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=product_skus.csv');
+    res.status(200).send(csvContent);
+  } catch (error) {
+    console.error('Export error:', error);
+    res.status(500).json({ message: 'Failed to export products.' });
+  }
+});
+
+// PATCH /api/products/bulk/image-by-sku - Match an image to a product by its filename (SKU)
+router.patch('/bulk/image-by-sku', isAdmin, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image file uploaded.' });
+    }
+
+    const filename = req.file.originalname;
+    // Extract SKU from filename (e.g. "SKU-123.jpg" -> "SKU-123")
+    const sku = path.parse(filename).name.trim();
+
+    if (!sku) {
+      return res.status(400).json({ message: 'Could not extract SKU from filename.' });
+    }
+
+    // Find the product by SKU
+    const { data: product, error: fetchError } = await supabase
+      .from('products')
+      .select('id, name, image')
+      .eq('sku', sku)
+      .maybeSingle();
+
+    if (fetchError || !product) {
+      return res.status(404).json({ message: `No product found with SKU: ${sku}` });
+    }
+
+    // Process and Upload
+    const webpBuffer = await convertToWebP(req.file.buffer);
+    const storageFilename = getWebPFilename(req.file.originalname);
+    const publicUrl = await uploadToSupabase(webpBuffer, storageFilename);
+
+    // Update product image
+    const { error: updateError } = await supabase
+      .from('products')
+      .update({ image: publicUrl })
+      .eq('id', product.id);
+
+    if (updateError) throw updateError;
+
+    // Cleanup old image if it exists and isn't default
+    if (product.image && product.image !== '/images/default-product.png') {
+      await deleteImagesFromSupabase(extractImageUrls(product.image));
+    }
+
+    res.json({ 
+      message: 'Matched and uploaded successfully.', 
+      productName: product.name,
+      sku: sku,
+      url: publicUrl 
+    });
+  } catch (error) {
+    console.error('Bulk match error:', error);
+    res.status(500).json({ message: 'Server error during bulk matching.' });
+  }
+});
+
 import { syncWithPOS } from '../utils/posSync.js';
 
 router.get('/', async (req, res) => {

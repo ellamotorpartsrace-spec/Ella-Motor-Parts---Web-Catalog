@@ -19,7 +19,7 @@ export default function AdminLayout({ children }) {
 
   const menuItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
-    
+    { name: 'Bulk Upload', path: '/admin/bulk-upload', icon: Package },
   ];
 
   return (

@@ -9,6 +9,7 @@ import ProductDetail from './pages/ProductDetail';
 import Login from './pages/Login';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminPhotoManager from './pages/admin/AdminPhotoManager';
+import BulkPhotoManager from './pages/admin/BulkPhotoManager';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 
@@ -26,6 +27,7 @@ export default function App() {
             <Routes>
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/products/:id/photos" element={<AdminPhotoManager />} />
+              <Route path="/admin/bulk-upload" element={<BulkPhotoManager />} />
             </Routes>
           </AdminLayout>
         </AdminRoute>
