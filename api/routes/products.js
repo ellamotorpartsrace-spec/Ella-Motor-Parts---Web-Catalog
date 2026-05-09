@@ -156,30 +156,59 @@ router.patch('/bulk/image-by-sku', isAdmin, upload.single('image'), async (req, 
     }
 
     const filename = req.file.originalname;
-    // Extract SKU from filename (e.g. "SKU-123.jpg" -> "SKU-123") or "SKU-123 (1).jpg"
-    // We remove common suffixes like (1), _1, etc to match base SKU
     const baseName = path.parse(filename).name.trim();
-    const sku = baseName.replace(/\s*\(\d+\)$/, '').replace(/_\d+$/, '').trim();
-
-    if (!sku) {
-      return res.status(400).json({ message: 'Could not extract SKU from filename.' });
-    }
-
-    // Find the product by SKU
-    const { data: product, error: fetchError } = await supabase
+    // Extract potential SKU from filename (e.g. "SKU-123.jpg" -> "SKU-123")
+    // We try multiple matching strategies to support auto-generated SKUs (POS_VAR_123)
+    
+    // 1. Try Exact Match (e.g. "POS_VAR_123")
+    let { data: product, error: fetchError } = await supabase
       .from('products')
-      .select('id, name, image')
-      .eq('sku', sku)
+      .select('id, name, image, sku')
+      .eq('sku', baseName)
       .maybeSingle();
 
+    let matchedSku = baseName;
+
+    // 2. If no match, try Stripped Match (remove suffixes like "(1)" or "_1")
+    if (!product) {
+      const strippedSku = baseName.replace(/\s*\(\d+\)$/, '').replace(/_\d+$/, '').trim();
+      
+      if (strippedSku !== baseName) {
+        const { data: strippedProduct, error: strippedError } = await supabase
+          .from('products')
+          .select('id, name, image, sku')
+          .eq('sku', strippedSku)
+          .maybeSingle();
+        
+        if (strippedProduct) {
+          product = strippedProduct;
+          matchedSku = strippedSku;
+        }
+      }
+    }
+
+    // 3. If still no match, try matching against Product ID (useful if user names file just "123.jpg")
+    if (!product && /^\d+$/.test(baseName)) {
+      const { data: idProduct, error: idError } = await supabase
+        .from('products')
+        .select('id, name, image, sku')
+        .eq('id', parseInt(baseName))
+        .maybeSingle();
+      
+      if (idProduct) {
+        product = idProduct;
+        matchedSku = idProduct.sku;
+      }
+    }
+
     if (fetchError || !product) {
-      return res.status(404).json({ message: `No product found with SKU: ${sku}` });
+      return res.status(404).json({ message: `No product found with SKU or ID matching: ${baseName}` });
     }
 
     // Handle Image Limit (10)
     const existingImages = extractImageUrls(product.image);
     if (existingImages.length >= 10) {
-      return res.status(400).json({ message: `Product ${sku} already has maximum (10) images.` });
+      return res.status(400).json({ message: `Product ${product.sku} already has maximum (10) images.` });
     }
 
     // Process and Upload

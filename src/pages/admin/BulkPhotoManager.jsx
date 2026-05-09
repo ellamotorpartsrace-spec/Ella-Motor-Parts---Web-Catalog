@@ -11,8 +11,7 @@ import {
   AlertCircle,
   X,
   Play,
-  History,
-  Check
+  History
 } from 'lucide-react';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
@@ -114,7 +113,7 @@ export default function BulkPhotoManager() {
           product: data.productName,
           message: data.message || 'Successfully Matched',
           count: data.count,
-          id: item.id
+          id: `${item.id}-${Date.now()}`
         }, ...prev]);
       } catch (err) {
         const errMsg = err.response?.data?.message || 'Match Failed';
@@ -123,7 +122,7 @@ export default function BulkPhotoManager() {
           name: item.file.name,
           status: 'error',
           message: errMsg,
-          id: item.id
+          id: `${item.id}-${Date.now()}`
         }, ...prev]);
       } finally {
         URL.revokeObjectURL(item.preview);
@@ -183,10 +182,10 @@ export default function BulkPhotoManager() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* ── Left Column: Upload & Staging ── */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-8 space-y-6">
           
           {/* Drop Zone */}
           {!isUploading && (
@@ -300,64 +299,66 @@ export default function BulkPhotoManager() {
         </div>
 
         {/* ── Right Column: Match History ── */}
-        <div className="bg-white rounded-[2rem] border border-secondary-100 shadow-sm flex flex-col overflow-hidden h-[600px] lg:h-auto">
-          <div className="p-6 border-b border-secondary-50 flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-widest text-secondary-400 flex items-center gap-2">
-              <History size={14} />
-              Recent Matches
-            </h3>
-            <span className="px-2 py-1 bg-secondary-100 rounded text-[9px] font-black text-secondary-600">
-              {results.length} Total
-            </span>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-            {results.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center opacity-30">
-                <Package size={32} className="mb-4" />
-                <p className="text-[10px] font-black uppercase tracking-widest">No history yet</p>
-              </div>
-            ) : (
-              results.map((res, i) => (
-                <div 
-                  key={i}
-                  className={`p-4 rounded-xl border flex items-start gap-4 transition-all ${
-                    res.status === 'success' ? 'bg-white border-secondary-100' : 'bg-rose-50/30 border-rose-100'
-                  }`}
-                >
-                  <div className={`mt-0.5 ${res.status === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                    {res.status === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <p className="text-[9px] font-black text-secondary-400 uppercase tracking-tighter truncate">{res.name}</p>
-                      {res.count && <span className="text-[8px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">{res.count}/10</span>}
-                    </div>
-                    <p className="text-xs font-black text-secondary-900 leading-tight mb-2 truncate">
-                      {res.status === 'success' ? res.product : res.message}
-                    </p>
-                    {res.sku && (
-                      <div className="flex items-center gap-2">
-                        <span className="px-1.5 py-0.5 bg-rose-600 text-white rounded text-[8px] font-black tracking-widest uppercase shadow-sm">SKU</span>
-                        <span className="text-[10px] font-mono font-black text-rose-600">{res.sku}</span>
-                      </div>
-                    )}
-                  </div>
+        <div className="lg:col-span-4 sticky top-32">
+          <div className="bg-white rounded-[2rem] border border-secondary-100 shadow-sm flex flex-col overflow-hidden h-[600px] lg:h-[750px]">
+            <div className="p-6 border-b border-secondary-50 flex items-center justify-between">
+              <h3 className="text-xs font-black uppercase tracking-widest text-secondary-400 flex items-center gap-2">
+                <History size={14} />
+                Recent Matches
+              </h3>
+              <span className="px-2 py-1 bg-secondary-100 rounded text-[9px] font-black text-secondary-600">
+                {results.length} Total
+              </span>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+              {results.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center opacity-30">
+                  <Package size={32} className="mb-4" />
+                  <p className="text-[10px] font-black uppercase tracking-widest">No history yet</p>
                 </div>
-              ))
+              ) : (
+                results.map((res) => (
+                  <div 
+                    key={res.id}
+                    className={`p-4 rounded-xl border flex items-start gap-4 transition-all ${
+                      res.status === 'success' ? 'bg-white border-secondary-100' : 'bg-rose-50/30 border-rose-100'
+                    }`}
+                  >
+                    <div className={`mt-0.5 ${res.status === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      {res.status === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <p className="text-[9px] font-black text-secondary-400 uppercase tracking-tighter truncate">{res.name}</p>
+                        {res.count && <span className="text-[8px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">{res.count}/10</span>}
+                      </div>
+                      <p className="text-xs font-black text-secondary-900 leading-tight mb-2 truncate">
+                        {res.status === 'success' ? res.product : res.message}
+                      </p>
+                      {res.sku && (
+                        <div className="flex items-center gap-2">
+                          <span className="px-1.5 py-0.5 bg-rose-600 text-white rounded text-[8px] font-black tracking-widest uppercase shadow-sm">SKU</span>
+                          <span className="text-[10px] font-mono font-black text-rose-600">{res.sku}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            {results.length > 0 && (
+              <div className="p-4 border-t border-secondary-50">
+                <button
+                  onClick={() => setResults([])}
+                  className="w-full py-2 text-[10px] font-black uppercase tracking-widest text-secondary-400 hover:text-rose-600 transition-colors"
+                >
+                  Clear History
+                </button>
+              </div>
             )}
           </div>
-          
-          {results.length > 0 && (
-            <div className="p-4 border-t border-secondary-50">
-              <button
-                onClick={() => setResults([])}
-                className="w-full py-2 text-[10px] font-black uppercase tracking-widest text-secondary-400 hover:text-rose-600 transition-colors"
-              >
-                Clear History
-              </button>
-            </div>
-          )}
         </div>
 
       </div>
