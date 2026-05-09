@@ -230,14 +230,14 @@ export default function AdminDashboard() {
           <div className="px-6 sm:px-10 py-6 sm:py-8 border-b border-secondary-50 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <h2 className="text-xl font-display font-black text-secondary-950 tracking-tight">Active Components</h2>
             <div className="flex items-center gap-3 w-full lg:w-96">
-              <div className="relative flex-1 group w-full lg:w-96">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary-300 group-focus-within:text-primary-500 transition-colors" size={16} />
+              <div className="relative flex-1 group">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-secondary-400 group-focus-within:text-primary-600 transition-colors" size={18} />
                 <input 
                   type="text" 
                   placeholder="Search by name or SKU..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-secondary-50/50 rounded-xl text-xs font-bold border border-transparent focus:bg-white focus:border-secondary-200 transition-all outline-none"
+                  className="w-full pl-14 pr-6 py-4 bg-secondary-50/80 rounded-2xl text-xs font-bold border-2 border-transparent focus:bg-white focus:border-primary-100 focus:ring-4 focus:ring-primary-500/5 transition-all outline-none shadow-sm placeholder:text-secondary-400"
                 />
               </div>
             </div>
@@ -269,7 +269,10 @@ export default function AdminDashboard() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-black text-secondary-950 leading-snug break-words">{product.name}</p>
-                      <p className="text-[10px] font-mono text-secondary-400 font-bold uppercase tracking-widest mt-0.5">SKU: {product.sku}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[9px] font-black text-white bg-secondary-950 px-1.5 py-0.5 rounded uppercase tracking-widest">SKU</span>
+                        <span className="text-[10px] font-mono text-secondary-900 font-black uppercase tracking-widest">{product.sku}</span>
+                      </div>
                     </div>
                   </div>
                   
@@ -345,7 +348,10 @@ export default function AdminDashboard() {
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-black text-secondary-950 leading-snug break-words max-w-[320px] 2xl:max-w-[400px] group-hover:text-primary-600 transition-colors">{product.name}</p>
-                            <p className="text-[10px] font-mono text-secondary-400 font-bold uppercase tracking-widest">SKU: {product.sku}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[8px] font-black text-white bg-secondary-900 px-1.5 py-0.5 rounded uppercase tracking-widest">SKU</span>
+                              <span className="text-[10px] font-mono text-secondary-900 font-black uppercase tracking-widest">{product.sku}</span>
+                            </div>
                           </div>
                         </div>
                       </td>

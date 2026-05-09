@@ -228,9 +228,10 @@ export default function BulkPhotoManager() {
                       {res.status === 'success' ? res.product : res.message}
                     </p>
                     {res.sku && (
-                      <span className="inline-block px-1.5 py-0.5 bg-secondary-950 text-white rounded text-[8px] font-black tracking-widest">
-                        SKU: {res.sku}
-                      </span>
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <span className="px-1.5 py-0.5 bg-secondary-900 text-white rounded text-[7px] font-black tracking-widest uppercase">SKU</span>
+                        <span className="text-[10px] font-mono font-black text-secondary-950">{res.sku}</span>
+                      </div>
                     )}
                   </div>
                 </div>

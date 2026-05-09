@@ -169,7 +169,13 @@ export default function AdminPhotoManager() {
             <div className="min-w-0">
               <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-500 mb-1">Photo Manager</p>
               <h1 className="text-xl font-display font-black text-secondary-950 leading-tight break-words">{product?.name}</h1>
-              <p className="text-[10px] font-mono text-secondary-400 font-bold uppercase mt-1">SKU: {product?.sku} · {product?.category}</p>
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-2">
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-secondary-900 rounded-lg shadow-sm">
+                  <span className="text-[8px] font-black text-secondary-400 uppercase tracking-widest">SKU</span>
+                  <span className="text-[10px] font-mono text-white font-black uppercase">{product?.sku}</span>
+                </div>
+                <span className="text-[10px] font-black text-secondary-400 uppercase tracking-widest border border-secondary-100 px-2 py-1 rounded-lg bg-secondary-50">{product?.category}</span>
+              </div>
             </div>
             <div className="sm:ml-auto text-center sm:text-right shrink-0 mt-2 sm:mt-0 border-t sm:border-t-0 border-secondary-100 pt-4 sm:pt-0">
               <p className="text-3xl font-display font-black text-secondary-950">{savedImages.length}</p>
