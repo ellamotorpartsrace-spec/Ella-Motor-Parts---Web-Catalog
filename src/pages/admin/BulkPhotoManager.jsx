@@ -21,7 +21,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function BulkPhotoManager() {
   const [isUploading, setIsUploading] = useState(false);
-  const [pendingFiles, setPendingFiles] = useState([]); // [{file, id, preview}]
+  const [pendingFiles, setPendingFiles] = useState([]); // [{file, id, previejklw}]
   const [results, setResults] = useState([]);
   const [dragActive, setDragActive] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
