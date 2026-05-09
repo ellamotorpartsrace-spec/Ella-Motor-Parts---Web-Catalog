@@ -231,7 +231,7 @@ router.patch('/bulk/image-by-sku', isAdmin, upload.single('image'), async (req, 
     res.json({ 
       message: 'Matched and added successfully.', 
       productName: product.name,
-      sku: sku,
+      sku: product.sku,
       url: publicUrl,
       count: updatedImages.length
     });
