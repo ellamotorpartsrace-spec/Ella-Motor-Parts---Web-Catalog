@@ -169,27 +169,43 @@ router.patch('/bulk/image-by-sku', isAdmin, upload.single('image'), async (req, 
 
     let matchedSku = baseName;
 
-    // 2. If no match, try Stripped Match (remove suffixes like "(1)" or "_1")
+    // 2. If no match, try stripping parenthetical suffixes (e.g. "SKU-123(1)" -> "SKU-123")
     if (!product) {
-      const strippedSku = baseName.replace(/\s*\(\d+\)$/, '').replace(/_\d+$/, '').trim();
-      
-      if (strippedSku !== baseName) {
-        const { data: strippedProduct, error: strippedError } = await supabase
+      const parentheticalStripped = baseName.replace(/\s*\(\d+\)$/, '').trim();
+      if (parentheticalStripped !== baseName) {
+        const { data: pProduct } = await supabase
           .from('products')
           .select('id, name, image, sku')
-          .eq('sku', strippedSku)
+          .eq('sku', parentheticalStripped)
           .maybeSingle();
         
-        if (strippedProduct) {
-          product = strippedProduct;
-          matchedSku = strippedSku;
+        if (pProduct) {
+          product = pProduct;
+          matchedSku = parentheticalStripped;
         }
       }
     }
 
-    // 3. If still no match, try matching against Product ID (useful if user names file just "123.jpg")
+    // 3. If no match, try stripping underscore suffixes (e.g. "SKU-123_1" -> "SKU-123")
+    if (!product) {
+      const underscoreStripped = baseName.replace(/_\d+$/, '').trim();
+      if (underscoreStripped !== baseName && underscoreStripped !== 'POS_VAR') {
+        const { data: uProduct } = await supabase
+          .from('products')
+          .select('id, name, image, sku')
+          .eq('sku', underscoreStripped)
+          .maybeSingle();
+        
+        if (uProduct) {
+          product = uProduct;
+          matchedSku = underscoreStripped;
+        }
+      }
+    }
+
+    // 4. If still no match, try matching against Product ID (useful if user names file just "123.jpg")
     if (!product && /^\d+$/.test(baseName)) {
-      const { data: idProduct, error: idError } = await supabase
+      const { data: idProduct } = await supabase
         .from('products')
         .select('id, name, image, sku')
         .eq('id', parseInt(baseName))
