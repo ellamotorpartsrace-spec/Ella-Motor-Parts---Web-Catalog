@@ -12,13 +12,10 @@ import {
   X,
   Play,
   History,
-  Trash2,
-  Check,
-  Layers
+  Check
 } from 'lucide-react';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
-import { motion, AnimatePresence } from 'framer-motion';
 
 export default function BulkPhotoManager() {
   const [isUploading, setIsUploading] = useState(false);
@@ -67,7 +64,7 @@ export default function BulkPhotoManager() {
     }));
     
     setPendingFiles(prev => [...prev, ...newPending]);
-    toast.success(`Staged ${imageFiles.length} items for matching`);
+    toast.success(`Staged ${imageFiles.length} images`);
   };
 
   const removePendingFile = (id) => {
@@ -115,7 +112,7 @@ export default function BulkPhotoManager() {
           sku: data.sku,
           status: 'success',
           product: data.productName,
-          message: data.message || 'Success',
+          message: data.message || 'Successfully Matched',
           count: data.count,
           id: item.id
         }, ...prev]);
@@ -134,7 +131,7 @@ export default function BulkPhotoManager() {
     }
 
     toast.dismiss(toastId);
-    toast.success('Batch Processing Complete');
+    toast.success('Batch processing complete!');
     setIsUploading(false);
   };
 
@@ -151,6 +148,10 @@ export default function BulkPhotoManager() {
     if (dragCounter.current === 0) setDragActive(false);
   };
 
+  const handleDragOver = (e) => {
+    e.preventDefault(); e.stopPropagation();
+  };
+
   const handleDrop = (e) => {
     e.preventDefault(); e.stopPropagation();
     setDragActive(false);
@@ -159,264 +160,212 @@ export default function BulkPhotoManager() {
   };
 
   return (
-    <div className="max-w-[1400px] mx-auto pb-20">
+    <div className="max-w-6xl mx-auto pt-16 pb-20 px-4">
       
       {/* ── Header ── */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
-        <div className="space-y-1">
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary-600 mb-2 italic">Product Catalog Sync</p>
-          <h1 className="text-4xl font-display font-black text-secondary-950 tracking-tight">Bulk SKU Matcher</h1>
-          <p className="text-secondary-500 font-medium">Automatic image-to-product pairing using file names.</p>
+      <div className="flex flex-col md:flex-row items-end justify-between gap-6 mb-10">
+        <div>
+          <h1 className="text-4xl font-display font-black text-secondary-950 tracking-tight mb-2">
+            Bulk SKU Matcher
+          </h1>
+          <p className="text-secondary-500 font-medium">
+            Upload images named after your SKUs to automatically link them to products.
+          </p>
         </div>
         
         <button
           onClick={handleExportSKUs}
           disabled={isExporting}
-          className="flex items-center gap-3 px-8 py-4 bg-white border border-secondary-200 text-secondary-950 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:border-primary-500 hover:text-primary-600 transition-all shadow-sm group"
+          className="flex items-center gap-2 px-6 py-3 bg-secondary-950 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-secondary-950/20 disabled:opacity-50"
         >
-          {isExporting ? <ArrowClockwise className="animate-spin" size={16} /> : <FileCsv className="group-hover:scale-110 transition-transform" size={18} />}
-          Download SKU Index
+          {isExporting ? <ArrowClockwise className="animate-spin" size={16} /> : <FileCsv size={18} />}
+          Download SKU Cheat-Sheet
         </button>
       </div>
 
-      <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* ── Main Workspace (8 Cols) ── */}
-        <div className="lg:col-span-8 space-y-8">
+        {/* ── Left Column: Upload & Staging ── */}
+        <div className="lg:col-span-2 space-y-6">
           
-          {/* Progress / Info Bar */}
-          {isUploading && (
-            <div className="bg-white rounded-3xl p-8 border border-secondary-100 shadow-xl shadow-secondary-900/5 overflow-hidden relative">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center animate-pulse">
-                    <ArrowClockwise className="animate-spin" size={24} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-secondary-950 leading-none mb-1">Processing Batch</h3>
-                    <p className="text-xs font-bold text-secondary-400">Step {uploadStats.current} of {uploadStats.total}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-display font-black text-primary-600 leading-none mb-1">{Math.round((uploadStats.current / uploadStats.total) * 100)}%</p>
-                  <p className="text-[10px] font-black text-secondary-400 uppercase tracking-widest">Protocol Active</p>
-                </div>
+          {/* Drop Zone */}
+          {!isUploading && (
+            <div
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`
+                relative aspect-[16/7] rounded-[2rem] border-2 border-dashed transition-all duration-300 flex flex-col items-center justify-center p-8 cursor-pointer
+                ${dragActive ? 'border-primary-500 bg-primary-50' : 'border-secondary-200 bg-white hover:border-secondary-400'}
+              `}
+            >
+              <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={(e) => stageFiles(e.target.files)} />
+              
+              <div className="w-20 h-20 rounded-3xl bg-secondary-50 flex items-center justify-center mb-6">
+                <CloudArrowUp className="text-secondary-400" size={40} />
               </div>
-              <div className="w-full h-3 bg-secondary-50 rounded-full overflow-hidden border border-secondary-100">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${(uploadStats.current / uploadStats.total) * 100}%` }}
-                  className="h-full bg-gradient-to-r from-primary-600 to-rose-500 shadow-[0_0_15px_rgba(220,38,38,0.2)]"
-                />
+              
+              <h3 className="text-xl font-black text-secondary-900 mb-2">Drop Images Here</h3>
+              <p className="text-secondary-400 text-sm font-medium text-center max-w-xs leading-relaxed">
+                Images must match the SKU exactly. <br/>
+                <span className="text-secondary-900 font-bold italic">e.g. MT-123.jpg, MT-123(1).png</span>
+              </p>
+
+              {dragActive && (
+                <div className="absolute inset-0 bg-primary-500/10 backdrop-blur-[2px] rounded-[2rem] border-4 border-primary-500 flex items-center justify-center z-10">
+                  <span className="bg-white px-6 py-3 rounded-full shadow-xl font-black text-primary-600 uppercase tracking-widest text-xs">
+                    Release to Stage
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Staging Area / Queue */}
+          {(pendingFiles.length > 0 || isUploading) && (
+            <div className="bg-white rounded-[2rem] border border-secondary-100 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-secondary-50 flex items-center justify-between bg-secondary-50/30">
+                <h3 className="text-xs font-black uppercase tracking-widest text-secondary-400 flex items-center gap-2">
+                  <Package size={14} />
+                  Queue ({isUploading ? uploadStats.total : pendingFiles.length})
+                </h3>
+                {!isUploading && (
+                  <button onClick={clearPending} className="text-[10px] font-black uppercase tracking-widest text-rose-600 hover:text-rose-700">Clear All</button>
+                )}
+              </div>
+              
+              <div className="p-6">
+                {isUploading ? (
+                  <div className="py-10 flex flex-col items-center text-center">
+                    <div className="w-16 h-16 rounded-full border-4 border-secondary-100 border-t-primary-600 animate-spin mb-6" />
+                    <h4 className="text-xl font-black text-secondary-900 mb-2">Uploading Batch...</h4>
+                    <p className="text-secondary-400 text-sm font-medium mb-8">Processing {uploadStats.current} of {uploadStats.total}</p>
+                    <div className="w-full max-w-md h-2 bg-secondary-50 rounded-full overflow-hidden">
+                      <div className="h-full bg-primary-600 transition-all duration-300" style={{ width: `${(uploadStats.current / uploadStats.total) * 100}%` }} />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar pb-2">
+                      {pendingFiles.map((item) => (
+                        <div key={item.id} className="group relative aspect-square rounded-xl bg-secondary-50 border border-secondary-100 overflow-hidden shadow-sm">
+                          <img src={item.preview} alt="Staged" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
+                            <p className="text-[9px] font-black text-white uppercase tracking-tighter text-center break-all">{item.file.name}</p>
+                          </div>
+                          <button onClick={() => removePendingFile(item.id)} className="absolute top-1 right-1 w-6 h-6 bg-rose-600 text-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-lg">
+                            <X size={12} strokeWidth={3} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-8 pt-8 border-t border-secondary-50 flex justify-center">
+                      <button
+                        onClick={startUpload}
+                        className="flex items-center gap-3 px-10 py-4 bg-primary-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary-700 transition-all shadow-xl shadow-primary-600/20 active:scale-95"
+                      >
+                        <Play size={16} fill="white" />
+                        Start Matching & Uploading
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
 
-          {/* Staging & Drop Zone */}
-          <div className="bg-white rounded-[2.5rem] border border-secondary-100 shadow-xl shadow-secondary-900/5 overflow-hidden">
-            
-            {/* Header of Workspace */}
-            <div className="px-10 py-6 border-b border-secondary-50 flex items-center justify-between bg-secondary-50/30">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-white border border-secondary-100 flex items-center justify-center shadow-sm">
-                  <Layers className="text-primary-600" size={14} />
-                </div>
-                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-secondary-950">Matching Terminal</h3>
-              </div>
-              {pendingFiles.length > 0 && !isUploading && (
-                <button onClick={clearPending} className="text-[10px] font-black uppercase tracking-widest text-secondary-400 hover:text-rose-600 transition-colors">Discard Queue</button>
-              )}
-            </div>
-
-            <div className="p-10">
-              <AnimatePresence mode="wait">
-                {pendingFiles.length === 0 && !isUploading ? (
-                  <motion.div
-                    key="dropzone"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    onDragEnter={handleDragEnter}
-                    onDragLeave={handleDragLeave}
-                    onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`
-                      aspect-[16/7] rounded-[2rem] border-2 border-dashed transition-all duration-500 flex flex-col items-center justify-center p-12 group cursor-pointer relative overflow-hidden
-                      ${dragActive ? 'border-primary-500 bg-primary-50 scale-[1.01]' : 'border-secondary-100 bg-secondary-50/30 hover:border-secondary-300 hover:bg-secondary-50/60'}
-                    `}
-                  >
-                    <input ref={fileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={(e) => stageFiles(e.target.files)} />
-                    
-                    <div className="relative z-10 flex flex-col items-center text-center">
-                      <div className="w-20 h-20 rounded-[1.5rem] bg-white text-secondary-300 flex items-center justify-center mb-6 shadow-xl shadow-secondary-900/5 group-hover:text-primary-500 group-hover:scale-110 transition-all duration-500 border border-secondary-100">
-                        <CloudArrowUp size={32} strokeWidth={1.5} />
-                      </div>
-                      <h3 className="text-xl font-display font-black text-secondary-950 mb-2">Drop Product Images</h3>
-                      <p className="text-secondary-400 text-[10px] font-black uppercase tracking-widest">Supports multiple JPG, PNG, WebP</p>
-                    </div>
-
-                    {dragActive && (
-                      <div className="absolute inset-0 bg-primary-500/5 backdrop-blur-[2px] flex items-center justify-center z-20">
-                        <div className="bg-white px-8 py-4 rounded-3xl shadow-2xl flex items-center gap-4 animate-in zoom-in-95 duration-200 border border-primary-100">
-                          <Check className="text-primary-600" size={20} strokeWidth={3} />
-                          <span className="font-black text-primary-600 uppercase tracking-widest text-xs">Ready to Stage</span>
-                        </div>
-                      </div>
-                    )}
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="staging"
-                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                    className="space-y-10"
-                  >
-                    {!isUploading && (
-                      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-6 max-h-[500px] overflow-y-auto pr-4 custom-scrollbar pb-4">
-                        {pendingFiles.map((item) => (
-                          <div key={item.id} className="group relative aspect-square rounded-[1.5rem] bg-secondary-50 border border-secondary-100 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500">
-                            <img src={item.preview} alt="Queue" className="w-full h-full object-cover grayscale-[0.3] group-hover:grayscale-0 transition-all duration-700 group-hover:scale-110" />
-                            <div className="absolute inset-0 bg-secondary-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-3">
-                              <p className="text-[8px] font-black text-white uppercase tracking-tighter text-center line-clamp-3">{item.file.name}</p>
-                            </div>
-                            <button 
-                              onClick={() => removePendingFile(item.id)}
-                              className="absolute top-2 right-2 w-7 h-7 bg-white text-secondary-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:text-rose-600 hover:scale-110 shadow-lg border border-secondary-100"
-                            >
-                              <X size={12} strokeWidth={3} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {!isUploading && (
-                      <div className="flex flex-col items-center gap-4 pt-10 border-t border-secondary-50">
-                        <button
-                          onClick={startUpload}
-                          className="w-full md:w-auto flex items-center justify-center gap-4 px-16 py-5 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] transition-all duration-500 shadow-xl shadow-primary-600/30 active:scale-[0.98]"
-                        >
-                          <Play size={18} fill="white" />
-                          Commit Batch to Server
-                        </button>
-                        <p className="text-[9px] font-black text-secondary-400 uppercase tracking-widest text-center">Batch total: {pendingFiles.length} items staged</p>
-                      </div>
-                    )}
-
-                    {isUploading && (
-                      <div className="py-20 flex flex-col items-center justify-center text-center">
-                        <div className="w-20 h-20 rounded-full border-4 border-secondary-50 border-t-primary-600 animate-spin mb-8" />
-                        <h4 className="text-xl font-display font-black text-secondary-950 mb-2">Syncing Data Nodes</h4>
-                        <p className="text-secondary-400 text-sm font-medium">Matching names with SKU records...</p>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Guide Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white rounded-3xl p-8 border border-secondary-100 shadow-sm flex items-start gap-6 group hover:border-primary-500/20 transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-primary-50 flex items-center justify-center shrink-0 text-primary-600 border border-primary-100">
-                <Info size={22} />
+          {/* Guidelines */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 flex gap-4">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                <Info size={20} className="text-amber-600" />
               </div>
               <div>
-                <h4 className="text-[11px] font-black text-secondary-950 uppercase tracking-widest mb-1">Naming Standard</h4>
-                <p className="text-xs text-secondary-500 font-medium leading-relaxed">Files like <span className="text-primary-600 font-bold">MT-123(1).jpg</span> and <span className="text-primary-600 font-bold">MT-123.png</span> both pair with SKU <span className="text-primary-600 font-bold">MT-123</span>.</p>
+                <h4 className="text-xs font-black text-amber-900 uppercase tracking-widest mb-1">Naming Rules</h4>
+                <p className="text-[11px] text-amber-800 font-medium leading-relaxed">System ignores (1), _2 suffixes. <span className="font-bold">MT-123(1).jpg</span> pairs with <span className="font-bold">MT-123</span>.</p>
               </div>
             </div>
-            <div className="bg-white rounded-3xl p-8 border border-secondary-100 shadow-sm flex items-start gap-6 group hover:border-rose-500/20 transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center shrink-0 text-rose-600 border border-rose-100">
-                <Package size={22} />
+            <div className="bg-primary-50 border border-primary-100 rounded-2xl p-6 flex gap-4">
+              <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center shrink-0">
+                <Package size={20} className="text-primary-600" />
               </div>
               <div>
-                <h4 className="text-[11px] font-black text-secondary-950 uppercase tracking-widest mb-1">Queue Limits</h4>
-                <p className="text-xs text-secondary-500 font-medium leading-relaxed">Each SKU can store <span className="font-bold text-rose-600">10 images</span> max. Additional uploads for full products will be skipped.</p>
+                <h4 className="text-xs font-black text-primary-900 uppercase tracking-widest mb-1">Limit Protocol</h4>
+                <p className="text-[11px] text-primary-800 font-medium leading-relaxed">Max <span className="font-bold">10 images</span> per product. Excess uploads for full SKUs will be skipped.</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── Monitor / History (4 Cols) ── */}
-        <div className="lg:col-span-4 sticky top-32">
-          <div className="bg-white rounded-[2.5rem] border border-secondary-100 shadow-xl shadow-secondary-900/5 overflow-hidden flex flex-col max-h-[850px]">
-            <div className="px-8 py-8 border-b border-secondary-50 bg-secondary-50/30 flex items-center justify-between">
-              <div>
-                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-secondary-400 mb-2">Live Logs</h3>
-                <p className="text-3xl font-display font-black text-secondary-950">{results.length}</p>
+        {/* ── Right Column: Match History ── */}
+        <div className="bg-white rounded-[2rem] border border-secondary-100 shadow-sm flex flex-col overflow-hidden h-[600px] lg:h-auto">
+          <div className="p-6 border-b border-secondary-50 flex items-center justify-between">
+            <h3 className="text-xs font-black uppercase tracking-widest text-secondary-400 flex items-center gap-2">
+              <History size={14} />
+              Recent Matches
+            </h3>
+            <span className="px-2 py-1 bg-secondary-100 rounded text-[9px] font-black text-secondary-600">
+              {results.length} Total
+            </span>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+            {results.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center opacity-30">
+                <Package size={32} className="mb-4" />
+                <p className="text-[10px] font-black uppercase tracking-widest">No history yet</p>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-white border border-secondary-100 flex items-center justify-center shadow-sm">
-                <History className="text-secondary-300" size={20} />
-              </div>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-              {results.length === 0 ? (
-                <div className="py-20 flex flex-col items-center justify-center text-center opacity-30 grayscale">
-                  <div className="w-16 h-16 rounded-full border-2 border-dashed border-secondary-200 flex items-center justify-center mb-4">
-                    <History size={24} />
+            ) : (
+              results.map((res, i) => (
+                <div 
+                  key={i}
+                  className={`p-4 rounded-xl border flex items-start gap-4 transition-all ${
+                    res.status === 'success' ? 'bg-white border-secondary-100' : 'bg-rose-50/30 border-rose-100'
+                  }`}
+                >
+                  <div className={`mt-0.5 ${res.status === 'success' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    {res.status === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
                   </div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em]">Monitor Standby</p>
-                </div>
-              ) : (
-                <AnimatePresence initial={false}>
-                  {results.map((res) => (
-                    <motion.div 
-                      key={res.id || Math.random()}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className={`p-5 rounded-2xl border transition-all duration-300 ${
-                        res.status === 'success' ? 'bg-white border-secondary-100 hover:border-emerald-200' : 'bg-rose-50/30 border-rose-100'
-                      }`}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className={`mt-1 shrink-0 w-8 h-8 rounded-xl flex items-center justify-center ${res.status === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-100 text-rose-600'}`}>
-                          {res.status === 'success' ? <CheckCircle size={16} /> : <AlertCircle size={16} />}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <p className="text-[8px] font-black text-secondary-400 uppercase tracking-widest truncate">{res.name}</p>
-                            {res.count && <span className="text-[8px] font-black text-emerald-600 px-2 py-0.5 bg-emerald-50 rounded-full border border-emerald-100">{res.count}/10</span>}
-                          </div>
-                          <h4 className="text-[12px] font-black leading-tight text-secondary-900 mb-2 truncate">{res.status === 'success' ? res.product : res.message}</h4>
-                          {res.sku && (
-                            <div className="flex items-center gap-2">
-                              <span className="px-2 py-0.5 bg-rose-600 text-white rounded-md text-[8px] font-black uppercase tracking-widest shadow-sm shadow-rose-600/20">SKU</span>
-                              <span className="text-[10px] font-mono font-black text-rose-600">{res.sku}</span>
-                            </div>
-                          )}
-                        </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="text-[9px] font-black text-secondary-400 uppercase tracking-tighter truncate">{res.name}</p>
+                      {res.count && <span className="text-[8px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">{res.count}/10</span>}
+                    </div>
+                    <p className="text-xs font-black text-secondary-900 leading-tight mb-2 truncate">
+                      {res.status === 'success' ? res.product : res.message}
+                    </p>
+                    {res.sku && (
+                      <div className="flex items-center gap-2">
+                        <span className="px-1.5 py-0.5 bg-rose-600 text-white rounded text-[8px] font-black tracking-widest uppercase shadow-sm">SKU</span>
+                        <span className="text-[10px] font-mono font-black text-rose-600">{res.sku}</span>
                       </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              )}
-            </div>
-            
-            {results.length > 0 && (
-              <div className="p-6 border-t border-secondary-50 bg-secondary-50/10">
-                <button onClick={() => setResults([])} className="w-full py-3 text-[10px] font-black uppercase tracking-widest text-secondary-400 hover:text-rose-600 transition-colors">Clear Protocol Logs</button>
-              </div>
+                    )}
+                  </div>
+                </div>
+              ))
             )}
           </div>
+          
+          {results.length > 0 && (
+            <div className="p-4 border-t border-secondary-50">
+              <button
+                onClick={() => setResults([])}
+                className="w-full py-2 text-[10px] font-black uppercase tracking-widest text-secondary-400 hover:text-rose-600 transition-colors"
+              >
+                Clear History
+              </button>
+            </div>
+          )}
         </div>
-      </main>
+
+      </div>
 
       <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f8fafc;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #e2e8f0;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #cbd5e1;
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
       `}</style>
     </div>
   );
