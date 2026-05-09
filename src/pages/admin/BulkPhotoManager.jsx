@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { 
   Upload as CloudArrowUp, 
   FileText as FileCsv, 
@@ -7,7 +7,6 @@ import {
   RefreshCw as ArrowClockwise, 
   Info,
   Package,
-  Image as ImageIcon,
   AlertCircle,
   X,
   Play,
@@ -26,9 +25,30 @@ export default function BulkPhotoManager() {
   
   const fileInputRef = useRef(null);
   const dragCounter = useRef(0);
+  const uploadInProgress = useRef(false);
+
+  // ── Persistence: Load History ──
+  useEffect(() => {
+    const saved = localStorage.getItem('ella_bulk_matches');
+    if (saved) {
+      try {
+        setResults(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to load history', e);
+      }
+    }
+  }, []);
+
+  // ── Persistence: Save History ──
+  useEffect(() => {
+    if (results.length > 0) {
+      localStorage.setItem('ella_bulk_matches', JSON.stringify(results));
+    }
+  }, [results]);
 
   // ── CSV Export ──
   const handleExportSKUs = async () => {
+    if (isExporting) return;
     setIsExporting(true);
     try {
       const response = await api.get('/products/export/skus', { responseType: 'blob' });
@@ -50,6 +70,7 @@ export default function BulkPhotoManager() {
 
   // ── Stage Files ──
   const stageFiles = (files) => {
+    if (isUploading || uploadInProgress.current) return;
     const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
     if (imageFiles.length === 0) {
       toast.error('Please drop image files only');
@@ -67,6 +88,7 @@ export default function BulkPhotoManager() {
   };
 
   const removePendingFile = (id) => {
+    if (isUploading || uploadInProgress.current) return;
     setPendingFiles(prev => {
       const filtered = prev.filter(f => f.id !== id);
       const removed = prev.find(f => f.id === id);
@@ -76,14 +98,16 @@ export default function BulkPhotoManager() {
   };
 
   const clearPending = () => {
+    if (isUploading || uploadInProgress.current) return;
     pendingFiles.forEach(f => URL.revokeObjectURL(f.preview));
     setPendingFiles([]);
   };
 
   // ── Upload Logic ──
   const startUpload = async () => {
-    if (pendingFiles.length === 0) return;
+    if (pendingFiles.length === 0 || isUploading || uploadInProgress.current) return;
 
+    uploadInProgress.current = true;
     setIsUploading(true);
     const totalToUpload = pendingFiles.length;
     setUploadStats({ total: totalToUpload, current: 0, success: 0, fail: 0 });
@@ -132,6 +156,7 @@ export default function BulkPhotoManager() {
     toast.dismiss(toastId);
     toast.success('Batch processing complete!');
     setIsUploading(false);
+    uploadInProgress.current = false;
   };
 
   // ── Drag & Drop ──
@@ -158,6 +183,12 @@ export default function BulkPhotoManager() {
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) stageFiles(e.dataTransfer.files);
   };
 
+  const handleClearHistory = () => {
+    setResults([]);
+    localStorage.removeItem('ella_bulk_matches');
+    toast.success('History cleared');
+  };
+
   return (
     <div className="max-w-6xl mx-auto pt-16 pb-20 px-4">
       
@@ -182,7 +213,7 @@ export default function BulkPhotoManager() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* ── Left Column: Upload & Staging ── */}
         <div className="lg:col-span-8 space-y-6">
@@ -194,7 +225,7 @@ export default function BulkPhotoManager() {
               onDragLeave={handleDragLeave}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => !isUploading && fileInputRef.current?.click()}
               className={`
                 relative aspect-[16/7] rounded-[2rem] border-2 border-dashed transition-all duration-300 flex flex-col items-center justify-center p-8 cursor-pointer
                 ${dragActive ? 'border-primary-500 bg-primary-50' : 'border-secondary-200 bg-white hover:border-secondary-400'}
@@ -299,9 +330,9 @@ export default function BulkPhotoManager() {
         </div>
 
         {/* ── Right Column: Match History ── */}
-        <div className="lg:col-span-4 sticky top-32">
-          <div className="bg-white rounded-[2rem] border border-secondary-100 shadow-sm flex flex-col overflow-hidden h-[600px] lg:h-[750px]">
-            <div className="p-6 border-b border-secondary-50 flex items-center justify-between">
+        <div className="lg:col-span-4 lg:sticky lg:top-16 self-start">
+          <div className="bg-white rounded-[2rem] border border-secondary-100 shadow-sm flex flex-col overflow-hidden h-[575px]">
+            <div className="p-6 border-b border-secondary-50 flex items-center justify-between shrink-0">
               <h3 className="text-xs font-black uppercase tracking-widest text-secondary-400 flex items-center gap-2">
                 <History size={14} />
                 Recent Matches
@@ -349,12 +380,12 @@ export default function BulkPhotoManager() {
             </div>
             
             {results.length > 0 && (
-              <div className="p-4 border-t border-secondary-50">
+              <div className="p-4 border-t border-secondary-50 bg-white shrink-0 mt-auto">
                 <button
-                  onClick={() => setResults([])}
-                  className="w-full py-2 text-[10px] font-black uppercase tracking-widest text-secondary-400 hover:text-rose-600 transition-colors"
+                  onClick={handleClearHistory}
+                  className="w-full py-3 bg-secondary-50 hover:bg-rose-50 hover:text-rose-600 rounded-xl text-[10px] font-black uppercase tracking-widest text-secondary-400 transition-all border border-transparent hover:border-rose-100"
                 >
-                  Clear History
+                  Clear History Log
                 </button>
               </div>
             )}

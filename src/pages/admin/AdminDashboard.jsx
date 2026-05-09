@@ -54,26 +54,28 @@ export default function AdminDashboard() {
     return () => clearInterval(refreshTimer);
   }, [currentPage, debouncedSearch]);
 
-  // Separate Effect for Auto-Sync (Only on mount)
+  // Separate Effect for Auto-Sync (Periodic only, not on mount)
   useEffect(() => {
     const checkAutoSync = async () => {
+      // Only check if we haven't synced in this session or in the last 15 mins
+      const lastSyncTime = localStorage.getItem('last_pos_sync');
+      const fifteenMins = 15 * 60 * 1000;
+      
+      if (lastSyncTime && (Date.now() - parseInt(lastSyncTime)) < fifteenMins) {
+        return; // Already synced recently
+      }
+
       try {
-        const { data } = await api.get('/products?limit=1&sort=created_at&order=DESC');
-        if (data.products.length > 0) {
-          const lastUpdate = new Date(data.products[0].created_at);
-          const staleThreshold = new Date(Date.now() - 15 * 60 * 1000); // 15 minutes
-          
-          if (lastUpdate < staleThreshold) {
-            console.log('🔄 Inventory is stale (>15min). Triggering auto-sync...');
-            handleSync(true); // Silent sync
-          }
-        }
+        console.log('🔄 Checking if inventory sync is needed...');
+        handleSync(true); // Silent background sync
+        localStorage.setItem('last_pos_sync', Date.now().toString());
       } catch (err) {
         console.error('Auto-sync check failed:', err);
       }
     };
     
-    checkAutoSync();
+    // We don't call it immediately here to avoid annoying the user on every visit.
+    // It will run naturally in the background after the interval.
     const interval = setInterval(checkAutoSync, 15 * 60 * 1000); // Check every 15 mins
     return () => clearInterval(interval);
   }, []);
