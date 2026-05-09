@@ -117,13 +117,13 @@ export default function ProductDetail() {
 
               <div 
                 onClick={() => setIsPreviewOpen(true)}
-                className="w-full aspect-[4/3] max-h-[450px] bg-[#F8F9FA] rounded-[2rem] p-6 sm:p-8 lg:p-12 flex items-center justify-center border border-secondary-200 shadow-sm relative overflow-hidden group cursor-zoom-in"
+                className="w-full aspect-square sm:aspect-[4/3] max-h-[550px] bg-[#F8F9FA] rounded-[2.5rem] p-2 flex items-center justify-center border border-secondary-100 shadow-sm relative overflow-hidden group cursor-zoom-in transition-all hover:border-primary-100"
               >
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-transparent to-transparent opacity-60" />
                 <img
                   src={displayImage}
                   alt={product.name}
-                  className="w-full h-full object-contain relative z-10 drop-shadow-xl transition-transform duration-700 group-hover:scale-[1.03]"
+                  className="w-full h-full object-contain relative z-10 drop-shadow-2xl transition-transform duration-700 group-hover:scale-[1.05]"
                 />
                 {allImages.length > 1 && (
                   <>
