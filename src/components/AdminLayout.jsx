@@ -68,7 +68,7 @@ export default function AdminLayout({ children }) {
         </nav>
 
         <div className="p-4 border-t border-white/5 space-y-2">
-          <Link to="/" className="flex items-center gap-3 px-4 py-3 text-secondary-400 hover:text-white transition-colors">
+          <Link to="/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-3 text-secondary-400 hover:text-white transition-colors">
             <ExternalLink size={18} />
             <span className="text-[11px] font-black uppercase tracking-widest">View Store</span>
           </Link>
