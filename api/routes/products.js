@@ -156,8 +156,10 @@ router.patch('/bulk/image-by-sku', isAdmin, upload.single('image'), async (req, 
     }
 
     const filename = req.file.originalname;
-    // Extract SKU from filename (e.g. "SKU-123.jpg" -> "SKU-123")
-    const sku = path.parse(filename).name.trim();
+    // Extract SKU from filename (e.g. "SKU-123.jpg" -> "SKU-123") or "SKU-123 (1).jpg"
+    // We remove common suffixes like (1), _1, etc to match base SKU
+    const baseName = path.parse(filename).name.trim();
+    const sku = baseName.replace(/\s*\(\d+\)$/, '').replace(/_\d+$/, '').trim();
 
     if (!sku) {
       return res.status(400).json({ message: 'Could not extract SKU from filename.' });
@@ -174,29 +176,35 @@ router.patch('/bulk/image-by-sku', isAdmin, upload.single('image'), async (req, 
       return res.status(404).json({ message: `No product found with SKU: ${sku}` });
     }
 
+    // Handle Image Limit (10)
+    const existingImages = extractImageUrls(product.image);
+    if (existingImages.length >= 10) {
+      return res.status(400).json({ message: `Product ${sku} already has maximum (10) images.` });
+    }
+
     // Process and Upload
     const webpBuffer = await convertToWebP(req.file.buffer);
     const storageFilename = getWebPFilename(req.file.originalname);
     const publicUrl = await uploadToSupabase(webpBuffer, storageFilename);
 
+    // Append to existing images
+    const updatedImages = [...existingImages, publicUrl];
+    const imageValue = updatedImages.length > 1 ? JSON.stringify(updatedImages) : updatedImages[0];
+
     // Update product image
     const { error: updateError } = await supabase
       .from('products')
-      .update({ image: publicUrl })
+      .update({ image: imageValue })
       .eq('id', product.id);
 
     if (updateError) throw updateError;
 
-    // Cleanup old image if it exists and isn't default
-    if (product.image && product.image !== '/images/default-product.png') {
-      await deleteImagesFromSupabase(extractImageUrls(product.image));
-    }
-
     res.json({ 
-      message: 'Matched and uploaded successfully.', 
+      message: 'Matched and added successfully.', 
       productName: product.name,
       sku: sku,
-      url: publicUrl 
+      url: publicUrl,
+      count: updatedImages.length
     });
   } catch (error) {
     console.error('Bulk match error:', error);
