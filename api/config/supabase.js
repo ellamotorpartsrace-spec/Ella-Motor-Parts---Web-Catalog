@@ -12,8 +12,10 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.warn('⚠️ Supabase credentials missing in .env');
+if (!supabaseUrl || supabaseUrl === 'your_supabase_url_here' || !supabaseServiceKey || supabaseServiceKey === 'your_supabase_service_role_key_here') {
+  console.error('\x1b[31m%s\x1b[0m', '❌ CRITICAL ERROR: Supabase credentials are missing or using placeholders in .env');
+  console.error('\x1b[33m%s\x1b[0m', 'Please update the .env file in the project root with your actual Supabase URL and Service Role Key.');
+  process.exit(1);
 }
 
 export const supabase = createClient(supabaseUrl, supabaseServiceKey);

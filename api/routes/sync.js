@@ -41,6 +41,17 @@ router.post('/webhook', async (req, res) => {
     itemsToSync.push(...updates);
   } else if ((event === 'product_added' || event === 'product_updated') && product) {
     itemsToSync.push(product);
+  } else if (event === 'product_deleted' && product) {
+    try {
+      const sku = product.sku || `POS_VAR_${product.id}`;
+      console.log(`🗑️ Webhook Received: product_deleted | SKU: ${sku}`);
+      await supabase.from('products').delete().eq('sku', sku);
+      clearCache();
+      return res.json({ success: true, message: 'Product removed from catalog' });
+    } catch (err) {
+      console.error('Deletion webhook error:', err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
   }
 
   if (itemsToSync.length > 0) {
