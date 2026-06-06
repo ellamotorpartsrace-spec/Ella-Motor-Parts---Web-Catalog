@@ -87,17 +87,31 @@ export const syncWithPOS = async (force = false) => {
     const dedupedProducts = Array.from(uniquePosMap.values());
     console.log(`🧹 Deduplicated to ${dedupedProducts.length} unique SKUs.`);
 
-    // 3. Fetch ALL existing products from DB (Supabase defaults to 1000, we need more)
-    const { data: existingProducts, error: fetchError } = await supabase
-      .from('products')
-      .select('sku')
-      .limit(10000); // Set a limit high enough for the current catalog
-    
-    if (fetchError) {
-      console.error('❌ Error fetching existing SKUs:', fetchError.message);
+    // 3. Fetch ALL existing products from DB (Paginate to bypass 1000 row limit)
+    let existingProducts = [];
+    let hasMore = true;
+    let page = 0;
+    while (hasMore) {
+      const { data, error: fetchError } = await supabase
+        .from('products')
+        .select('*')
+        .range(page * 1000, (page + 1) * 1000 - 1);
+      
+      if (fetchError) {
+        console.error('❌ Error fetching existing SKUs:', fetchError.message);
+        break;
+      }
+      if (data && data.length > 0) {
+        existingProducts.push(...data);
+      }
+      if (!data || data.length < 1000) {
+        hasMore = false;
+      } else {
+        page++;
+      }
     }
     
-    const existingSkus = new Set(existingProducts?.map(p => p.sku) || []);
+    const existingMap = new Map(existingProducts.map(p => [p.sku, p]));
     const posSkuSet = new Set(uniquePosMap.keys());
 
     const newProducts = [];
@@ -108,10 +122,11 @@ export const syncWithPOS = async (force = false) => {
       const variation = posItem.variation && posItem.variation !== 'Default' ? posItem.variation : '';
       const fullName = variation ? `${posItem.name} (${variation})` : posItem.name;
 
-      if (existingSkus.has(uniqueSku)) {
-        // ✅ ONLY update Price and Stock — never touch photos (they are managed manually on the web catalog)
+      if (existingMap.has(uniqueSku)) {
+        // ✅ ONLY update Price and Stock — preserve existing photos and details
+        const existingItem = existingMap.get(uniqueSku);
         updates.push({
-          sku: uniqueSku,
+          ...existingItem,
           price: posItem.price,
           stock: posItem.stock
         });
@@ -144,25 +159,25 @@ export const syncWithPOS = async (force = false) => {
     let totalSavedCount = 0;
     let failedCount = 0;
     const CHUNK_SIZE = 100;
-    const allWork = [...newProducts, ...updates];
-    
-    if (allWork.length > 0) {
-      console.log(`📦 Processing ${allWork.length} items in parallel batches...`);
-      
-      // Use a simple concurrency limit of 5 batches at a time
-      for (let i = 0; i < allWork.length; i += (CHUNK_SIZE * 5)) {
+
+    // Process new products and updates in completely separate batches
+    // This prevents PostgREST from getting confused by mixed column structures
+    const processBatches = async (items, label) => {
+      if (items.length === 0) return;
+      console.log(`📦 Processing ${items.length} ${label} in parallel batches...`);
+      for (let i = 0; i < items.length; i += (CHUNK_SIZE * 5)) {
         const batchPromises = [];
         for (let j = 0; j < 5; j++) {
           const start = i + (j * CHUNK_SIZE);
-          if (start >= allWork.length) break;
+          if (start >= items.length) break;
           
-          const chunk = allWork.slice(start, start + CHUNK_SIZE);
+          const chunk = items.slice(start, start + CHUNK_SIZE);
           batchPromises.push(
             supabase.from('products')
               .upsert(chunk, { onConflict: 'sku' })
               .then(({ error }) => {
                 if (error) {
-                  console.error(`❌ Batch failed:`, error.message);
+                  console.error(`❌ Batch failed (${label}):`, error.message);
                   failedCount += chunk.length;
                 } else {
                   totalSavedCount += chunk.length;
@@ -172,7 +187,10 @@ export const syncWithPOS = async (force = false) => {
         }
         await Promise.all(batchPromises);
       }
-    }
+    };
+
+    await processBatches(newProducts, 'new products');
+    await processBatches(updates, 'updates');
 
     console.log(`✅ Sync Complete: ${totalSavedCount} saved, ${failedCount} failed, ${skusToDelete.length} deleted.`);
     lastSyncTime = Date.now();
